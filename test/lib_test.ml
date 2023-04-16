@@ -18,4 +18,4 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>. *)
 
-let () = Alcotest.run "Ladmm-lib" [ Num_test.cases ]
+let () = Alcotest.run "Ladmm-lib" [ Num_test.cases; Percent_test.cases ]

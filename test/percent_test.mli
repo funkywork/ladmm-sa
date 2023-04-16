@@ -18,34 +18,5 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>. *)
 
-type t = float
-
-let from_int = float_of_int
-let from_int64 = Int64.to_float
-let from_float x = x
-let ( ~!: ) x = from_float x
-
-let to_float x =
-  let r = Float.to_int (x *. 100.0) in
-  Float.of_int r /. 100.0
-
-let add = Float.add
-let sub = Float.sub
-let mul = Float.mul
-let div = Float.div
-let rem = Float.rem
-let pp ppf x = Format.fprintf ppf "%.2f" (to_float x)
-let to_string x = Format.asprintf "%a" pp x
-let equal = Float.equal
-let compare = Float.compare
-let ( = ) = equal
-let ( <> ) x y = not (equal x y)
-let ( > ) x y = compare x y > 0
-let ( >= ) x y = compare x y >= 0
-let ( < ) x y = compare x y < 0
-let ( <= ) x y = compare x y <= 0
-let ( + ) x y = add x y
-let ( - ) x y = sub x y
-let ( * ) x y = mul x y
-let ( / ) x y = div x y
-let ( mod ) = rem
+val cases : string * unit Alcotest.test_case list
+(** List of all test-cases. *)

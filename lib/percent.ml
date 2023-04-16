@@ -18,34 +18,19 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>. *)
 
-type t = float
+type t = Num.t
 
-let from_int = float_of_int
-let from_int64 = Int64.to_float
-let from_float x = x
-let ( ~!: ) x = from_float x
+let from_float x =
+  let r = x /. 100.0 in
+  Num.from_float r
 
-let to_float x =
-  let r = Float.to_int (x *. 100.0) in
-  Float.of_int r /. 100.0
+let from_int x = from_float (Float.of_int x)
+let from_int64 x = from_float (Int64.to_float x)
 
-let add = Float.add
-let sub = Float.sub
-let mul = Float.mul
-let div = Float.div
-let rem = Float.rem
-let pp ppf x = Format.fprintf ppf "%.2f" (to_float x)
+let pp ppf x =
+  let r = Num.(x * from_int 100) in
+  Format.fprintf ppf "%a%c" Num.pp r '%'
+
 let to_string x = Format.asprintf "%a" pp x
-let equal = Float.equal
-let compare = Float.compare
-let ( = ) = equal
-let ( <> ) x y = not (equal x y)
-let ( > ) x y = compare x y > 0
-let ( >= ) x y = compare x y >= 0
-let ( < ) x y = compare x y < 0
-let ( <= ) x y = compare x y <= 0
-let ( + ) x y = add x y
-let ( - ) x y = sub x y
-let ( * ) x y = mul x y
-let ( / ) x y = div x y
-let ( mod ) = rem
+let apply percent value = Num.mul value percent
+let ( ~%: ) x = from_float x

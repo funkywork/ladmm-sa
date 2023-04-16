@@ -51,6 +51,18 @@ let from_float_to_string_3 =
       let computed = Num.(0.42 |> from_float |> to_string) in
       check string "should be equal" expected computed)
 
+let test_to_float_1 =
+  test_case "to_float 1" `Quick (fun () ->
+      let expected = 42.0 in
+      let computed = Num.(42 |> from_int |> to_float) in
+      check (float 2.0) "should be equal" expected computed)
+
+let test_to_float_2 =
+  test_case "to_float 2" `Quick (fun () ->
+      let expected = 0.04 in
+      let computed = Num.(0.04 |> from_float |> to_float) in
+      check (float 2.0) "should be equal" expected computed)
+
 let cases =
   ( "Num"
   , [
@@ -59,4 +71,6 @@ let cases =
     ; from_float_to_string_1
     ; from_float_to_string_2
     ; from_float_to_string_3
+    ; test_to_float_1
+    ; test_to_float_2
     ] )

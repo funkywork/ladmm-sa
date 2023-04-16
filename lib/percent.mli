@@ -18,34 +18,22 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>. *)
 
-type t = float
+(** Represents a percentage that can be applied to a [Num.t]. *)
 
-let from_int = float_of_int
-let from_int64 = Int64.to_float
-let from_float x = x
-let ( ~!: ) x = from_float x
+type t
 
-let to_float x =
-  let r = Float.to_int (x *. 100.0) in
-  Float.of_int r /. 100.0
+(** {1 Creates values} *)
 
-let add = Float.add
-let sub = Float.sub
-let mul = Float.mul
-let div = Float.div
-let rem = Float.rem
-let pp ppf x = Format.fprintf ppf "%.2f" (to_float x)
-let to_string x = Format.asprintf "%a" pp x
-let equal = Float.equal
-let compare = Float.compare
-let ( = ) = equal
-let ( <> ) x y = not (equal x y)
-let ( > ) x y = compare x y > 0
-let ( >= ) x y = compare x y >= 0
-let ( < ) x y = compare x y < 0
-let ( <= ) x y = compare x y <= 0
-let ( + ) x y = add x y
-let ( - ) x y = sub x y
-let ( * ) x y = mul x y
-let ( / ) x y = div x y
-let ( mod ) = rem
+val from_int : int -> t
+val from_int64 : int64 -> t
+val from_float : float -> t
+val ( ~%: ) : float -> t
+
+(** {1 Application} *)
+
+val apply : t -> Num.t -> Num.t
+
+(** {1 Util} *)
+
+val pp : Format.formatter -> t -> unit
+val to_string : t -> string

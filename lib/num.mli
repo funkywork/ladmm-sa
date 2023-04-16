@@ -18,9 +18,8 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>. *)
 
-(** Represents a floating number (backed by an Int64). For example the floating
-    number [3.14] will be represented by the Int64 [314]. And the regular int
-    [12] will be represented by [1200]. *)
+(** Represents a floating number (backed by a regular [float]). Bounded to
+    two-decimals. *)
 
 type t
 
@@ -29,6 +28,35 @@ type t
 val from_int : int -> t
 val from_int64 : int64 -> t
 val from_float : float -> t
+val ( ~!: ) : float -> t
+
+(** {1 Conversion} *)
+
+val to_float : t -> float
+
+(** {1 Comparisons} *)
+
+val equal : t -> t -> bool
+val compare : t -> t -> int
+val ( = ) : t -> t -> bool
+val ( <> ) : t -> t -> bool
+val ( > ) : t -> t -> bool
+val ( < ) : t -> t -> bool
+val ( >= ) : t -> t -> bool
+val ( <= ) : t -> t -> bool
+
+(** {1 Arithmetic operation} *)
+
+val add : t -> t -> t
+val sub : t -> t -> t
+val mul : t -> t -> t
+val div : t -> t -> t
+val rem : t -> t -> t
+val ( + ) : t -> t -> t
+val ( - ) : t -> t -> t
+val ( * ) : t -> t -> t
+val ( / ) : t -> t -> t
+val ( mod ) : t -> t -> t
 
 (** {1 Util} *)
 
