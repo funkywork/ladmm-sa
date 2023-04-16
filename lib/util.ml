@@ -18,6 +18,24 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>. *)
 
-let () =
-  Alcotest.run "Ladmm-lib"
-    [ Num_test.cases; Percent_test.cases; Date_test.cases ]
+module Result = struct
+  type ('a, 'b) t = ('a, 'b) Stdlib.Result.t = Ok of 'a | Error of 'b
+
+  let map f = function Ok x -> Ok (f x) | Error x -> Error x
+  let bind f = function Ok x -> f x | Error x -> Error x
+  let ( >|= ) x f = map f x
+  let ( >>= ) x f = bind f x
+  let ( let+ ) x f = x >|= f
+  let ( let* ) x f = x >>= f
+end
+
+module Option = struct
+  type 'a t = 'a option = None | Some of 'a
+
+  let map f = function Some x -> Some (f x) | None -> None
+  let bind f = function Some x -> f x | None -> None
+  let ( >|= ) x f = map f x
+  let ( >>= ) x f = bind f x
+  let ( let+ ) x f = x >|= f
+  let ( let* ) x f = x >>= f
+end

@@ -18,6 +18,26 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>. *)
 
-let () =
-  Alcotest.run "Ladmm-lib"
-    [ Num_test.cases; Percent_test.cases; Date_test.cases ]
+type month =
+  | Jan
+  | Feb
+  | Mar
+  | Apr
+  | May
+  | Jun
+  | Jul
+  | Aug
+  | Sep
+  | Oct
+  | Nov
+  | Dec
+
+type day_of_week = Mon | Tue | Wed | Thu | Fri | Sat | Sun
+
+type date_error =
+  [ `Year_too_small of int
+  | `Year_too_big of int
+  | `Day_negative_or_null of int
+  | `Day_invalid_for of (int * month * int) * int
+  | `Month_invalid of int
+  | `Date_invalid of string ]

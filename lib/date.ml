@@ -1,0 +1,245 @@
+(* A small application that makes it easy to enter and track data to qualify
+   for artist status in Belgium. It is a pro bono application designed at the
+   request of "Les Amis d'ma mère", a Belgian non-profit organisation that
+   promotes (and supports) artists in Belgium.
+
+   Copyright (C) 2023  Funkywork
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>. *)
+
+type month = Sigs.month =
+  | Jan
+  | Feb
+  | Mar
+  | Apr
+  | May
+  | Jun
+  | Jul
+  | Aug
+  | Sep
+  | Oct
+  | Nov
+  | Dec
+
+type day_of_week = Sigs.day_of_week = Mon | Tue | Wed | Thu | Fri | Sat | Sun
+type t = { year : int; month : month; day : int }
+
+let year_of { year; _ } = year
+let month_of { month; _ } = month
+let day_of { day; _ } = day
+
+let is_leap_year year =
+  if year mod 100 = 0 then year mod 400 = 0 else year mod 4 = 0
+
+let in_leap_year d = is_leap_year (year_of d)
+
+let days_in_month year month =
+  match month with
+  | Jan | Mar | May | Jul | Aug | Oct | Dec -> 31
+  | Feb -> if is_leap_year year then 29 else 28
+  | _ -> 30
+
+let validate_year x =
+  if x < 1970 then Error (`Year_too_small x)
+  else if x > 3000 then Error (`Year_too_big x)
+  else Ok x
+
+let validate_day y m d =
+  if d < 1 then Error (`Day_negative_or_null d)
+  else
+    let dim = days_in_month y m in
+    if d > dim then Error (`Day_invalid_for ((y, m, dim), d)) else Ok d
+
+let month_to_int = function
+  | Jan -> 1
+  | Feb -> 2
+  | Mar -> 3
+  | Apr -> 4
+  | May -> 5
+  | Jun -> 6
+  | Jul -> 7
+  | Aug -> 8
+  | Sep -> 9
+  | Oct -> 10
+  | Nov -> 11
+  | Dec -> 12
+
+let month_from_int = function
+  | 1 -> Ok Jan
+  | 2 -> Ok Feb
+  | 3 -> Ok Mar
+  | 4 -> Ok Apr
+  | 5 -> Ok May
+  | 6 -> Ok Jun
+  | 7 -> Ok Jul
+  | 8 -> Ok Aug
+  | 9 -> Ok Sep
+  | 10 -> Ok Oct
+  | 11 -> Ok Nov
+  | 12 -> Ok Dec
+  | x -> Error (`Month_invalid x)
+
+let pp_month ppf m =
+  Format.fprintf ppf "%s"
+    (match m with
+    | Jan -> "Janvier"
+    | Feb -> "Février"
+    | Mar -> "Mars"
+    | Apr -> "Avril"
+    | May -> "Mai"
+    | Jun -> "Juin"
+    | Jul -> "Juillet"
+    | Aug -> "Août"
+    | Sep -> "Septembre"
+    | Oct -> "Octobre"
+    | Nov -> "Novembre"
+    | Dec -> "Décembre")
+
+let month_to_string = Format.asprintf "%a" pp_month
+
+let month_value = function
+  | Jan -> 0
+  | Feb -> 3
+  | Mar -> 3
+  | Apr -> 6
+  | May -> 1
+  | Jun -> 4
+  | Jul -> 6
+  | Aug -> 2
+  | Sep -> 5
+  | Oct -> 0
+  | Nov -> 3
+  | Dec -> 5
+
+let day_of_week y m d =
+  let yy = y mod 100 in
+  let cc = (y - yy) / 100 in
+  let c_code = [| 6; 4; 2; 0 |].(cc mod 4) in
+  let y_code = (yy + (yy / 4)) mod 7 in
+  let m_code =
+    let v = month_value m in
+    if is_leap_year y && (m = Jan || m = Feb) then v - 1 else v
+  in
+  let index = (c_code + y_code + m_code + d) mod 7 in
+  [| Sun; Mon; Tue; Wed; Thu; Fri; Sat |].(index)
+
+let make ~year:y ~month ~day:d =
+  let open Util.Result in
+  let* year = validate_year y in
+  let+ day = validate_day year month d in
+
+  { year; month; day }
+
+let weekday_of { year; month; day } = day_of_week year month day
+
+let compare a b =
+  let f { year; month; day; _ } =
+    (year * 10000) + (month_to_int month * 100) + day
+  in
+  Int.compare (f a) (f b)
+
+let equal a b = Int.equal 0 (compare a b)
+let ( = ) = equal
+let ( <> ) x y = not (equal x y)
+let ( > ) x y = compare x y > 0
+let ( >= ) x y = compare x y >= 0
+let ( < ) x y = compare x y < 0
+let ( <= ) x y = compare x y <= 0
+
+let pp ppf { year; month; day; _ } =
+  Format.fprintf ppf "%02d/%02d/%04d" day (month_to_int month) year
+
+let to_string d = Format.asprintf "%a" pp d
+
+let from_string str =
+  let san = String.(lowercase_ascii @@ trim str) in
+  match String.split_on_char '/' san with
+  | [ d; m; y ] ->
+      let opt =
+        let open Util.Option in
+        let* d = int_of_string_opt d in
+        let* m = int_of_string_opt m in
+        let+ y = int_of_string_opt y in
+        (d, m, y)
+      in
+      let open Util.Result in
+      let* day, m, year = Option.to_result ~none:(`Date_invalid san) opt in
+      let* month = month_from_int m in
+      make ~year ~month ~day
+  | _ -> Error (`Date_invalid san)
+
+let pp_error ppf err =
+  Format.fprintf ppf "%s"
+    (match err with
+    | `Year_too_small x -> Format.asprintf "L'année [%d] est trop petite" x
+    | `Year_too_big x -> Format.asprintf "L'année [%d] est trop grande" x
+    | `Day_negative_or_null x ->
+        Format.asprintf "Le jour [%d] est inférieur à 1" x
+    | `Day_invalid_for ((y, m, dim), d) ->
+        Format.asprintf
+          "Le jour [%d] est invalide pour le mois de %s %04d, il n'a que %d \
+           jours, "
+          d (month_to_string m) y dim
+    | `Month_invalid x ->
+        Format.asprintf
+          "Le mois [%d] doit-être compris entre 1 (Janvier) et 12 (Décembre)" x
+    | `Date_invalid x ->
+        Format.asprintf
+          "La date [%s] est invaide, elle doit avoir le format \
+           [jour/mois/année]"
+          x)
+
+let equal_error a b =
+  match (a, b) with
+  | `Year_too_small a, `Year_too_small b -> Int.equal a b
+  | `Year_too_big a, `Year_too_big b -> Int.equal a b
+  | `Day_negative_or_null a, `Day_negative_or_null b -> Int.equal a b
+  | `Day_invalid_for ((xa, xb, xc), xd), `Day_invalid_for ((ya, yb, yc), yd) ->
+      Int.equal xa ya
+      && Int.equal (month_to_int xb) (month_to_int yb)
+      && Int.equal xc yc
+      && Int.equal xd yd
+  | `Month_invalid a, `Month_invalid b -> Int.equal a b
+  | `Date_invalid a, `Date_invalid b -> String.equal a b
+  | _ -> false
+
+let first_day_of_month d = { d with day = 1 }
+
+let last_day_of_month d =
+  let dim = days_in_month d.year d.month in
+  { d with day = dim }
+
+let month_range d = (first_day_of_month d, last_day_of_month d)
+
+let pp_day_of_week ppf x =
+  Format.fprintf ppf "%s"
+    (match x with
+    | Mon -> "Lundi"
+    | Tue -> "Mardi"
+    | Wed -> "Mercredi"
+    | Thu -> "Jeudi"
+    | Fri -> "Vendredi"
+    | Sat -> "Samedi"
+    | Sun -> "Dimanche")
+
+let equal_day_of_week a b =
+  match (a, b) with
+  | Mon, Mon -> true
+  | Tue, Tue -> true
+  | Wed, Wed -> true
+  | Thu, Thu -> true
+  | Fri, Fri -> true
+  | Sat, Sat -> true
+  | Sun, Sun -> true
+  | _ -> false

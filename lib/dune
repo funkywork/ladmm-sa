@@ -1,3 +1,4 @@
 (library
   (name ladmm_lib)
-  (public_name ladmm.lib))
+  (public_name ladmm.lib)
+  (modules_without_implementation sigs))

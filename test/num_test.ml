@@ -22,43 +22,43 @@ open Alcotest
 open Ladmm_lib
 
 let from_int_to_string_1 =
-  test_case "from int, to string 1" `Quick (fun () ->
+  test_case "make a num using [from_int]" `Quick (fun () ->
       let expected = "42.00" in
       let computed = Num.(42 |> from_int |> to_string) in
       check string "should be equal" expected computed)
 
 let from_int64_to_string_1 =
-  test_case "from int64, to string 1" `Quick (fun () ->
+  test_case "make a num using [from_int64]" `Quick (fun () ->
       let expected = "42.00" in
       let computed = Num.(42L |> from_int64 |> to_string) in
       check string "should be equal" expected computed)
 
 let from_float_to_string_1 =
-  test_case "from float, to string 1" `Quick (fun () ->
+  test_case "make a num using [from_float]" `Quick (fun () ->
       let expected = "3.14" in
       let computed = Num.(3.14 |> from_float |> to_string) in
       check string "should be equal" expected computed)
 
 let from_float_to_string_2 =
-  test_case "from float, to string 2" `Quick (fun () ->
+  test_case "make a num using [from_float]" `Quick (fun () ->
       let expected = "1.67" in
       let computed = Num.(1.6789890087655 |> from_float |> to_string) in
       check string "should be equal" expected computed)
 
 let from_float_to_string_3 =
-  test_case "from float, to string 1" `Quick (fun () ->
+  test_case "make a num using [from_float]" `Quick (fun () ->
       let expected = "0.42" in
       let computed = Num.(0.42 |> from_float |> to_string) in
       check string "should be equal" expected computed)
 
 let test_to_float_1 =
-  test_case "to_float 1" `Quick (fun () ->
+  test_case "make a float from a float using [to_float]" `Quick (fun () ->
       let expected = 42.0 in
       let computed = Num.(42 |> from_int |> to_float) in
       check (float 2.0) "should be equal" expected computed)
 
 let test_to_float_2 =
-  test_case "to_float 2" `Quick (fun () ->
+  test_case "make a float from a float using [to_float]" `Quick (fun () ->
       let expected = 0.04 in
       let computed = Num.(0.04 |> from_float |> to_float) in
       check (float 2.0) "should be equal" expected computed)
