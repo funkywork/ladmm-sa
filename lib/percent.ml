@@ -3,7 +3,7 @@
    request of "Les Amis d'ma mère", a Belgian non-profit organisation that
    promotes (and supports) artists in Belgium.
 
-   Copyright (C) 2023  Funkywork
+   Copyright (C) 2023 Funkywork
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
