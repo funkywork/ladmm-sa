@@ -34,10 +34,19 @@ type month =
 
 type day_of_week = Mon | Tue | Wed | Thu | Fri | Sat | Sun
 
-type date_error =
+type date_make_error =
   [ `Year_too_small of int
   | `Year_too_big of int
   | `Day_negative_or_null of int
   | `Day_invalid_for of (int * month * int) * int
-  | `Month_invalid of int
-  | `Date_invalid of string ]
+  | `Month_invalid of int ]
+
+type date_error = [ date_make_error | `Date_invalid of string ]
+type quarters_by_date_error = [ `No_quarter of string ]
+
+type quarters_by_range_error =
+  [ quarters_by_date_error
+  | `Range_overlapping of string
+  | `Range_invalid of string ]
+
+type quarters_error = [ quarters_by_date_error | quarters_by_range_error ]

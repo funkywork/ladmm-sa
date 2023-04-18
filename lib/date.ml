@@ -274,3 +274,5 @@ let ( < ) x y = compare x y < 0
 let ( <= ) x y = compare x y <= 0
 let ( + ) d x = add_month d x
 let ( - ) d x = add_month d (-x)
+let min a b = if b > a then a else b
+let max a b = if a < b then a else b
