@@ -41,3 +41,5 @@ module Option : sig
   val ( let+ ) : 'a t -> ('a -> 'b) -> 'b t
   val ( let* ) : 'a t -> ('a -> 'b t) -> 'b t
 end
+
+val modulo : int -> int -> int

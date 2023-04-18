@@ -39,3 +39,7 @@ module Option = struct
   let ( let+ ) x f = x >|= f
   let ( let* ) x f = x >>= f
 end
+
+let modulo x y =
+  let r = x mod y in
+  if r >= 0 then r else r + y

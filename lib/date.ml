@@ -62,18 +62,18 @@ let validate_day y m d =
     if d > dim then Error (`Day_invalid_for ((y, m, dim), d)) else Ok d
 
 let month_to_int = function
-  | Jan -> 1
-  | Feb -> 2
-  | Mar -> 3
-  | Apr -> 4
-  | May -> 5
-  | Jun -> 6
-  | Jul -> 7
-  | Aug -> 8
-  | Sep -> 9
-  | Oct -> 10
-  | Nov -> 11
-  | Dec -> 12
+  | Jan -> 0
+  | Feb -> 1
+  | Mar -> 2
+  | Apr -> 3
+  | May -> 4
+  | Jun -> 5
+  | Jul -> 6
+  | Aug -> 7
+  | Sep -> 8
+  | Oct -> 9
+  | Nov -> 10
+  | Dec -> 11
 
 let month_from_int = function
   | 1 -> Ok Jan
@@ -143,22 +143,8 @@ let make ~year:y ~month ~day:d =
 
 let weekday_of { year; month; day } = day_of_week year month day
 
-let compare a b =
-  let f { year; month; day; _ } =
-    (year * 10000) + (month_to_int month * 100) + day
-  in
-  Int.compare (f a) (f b)
-
-let equal a b = Int.equal 0 (compare a b)
-let ( = ) = equal
-let ( <> ) x y = not (equal x y)
-let ( > ) x y = compare x y > 0
-let ( >= ) x y = compare x y >= 0
-let ( < ) x y = compare x y < 0
-let ( <= ) x y = compare x y <= 0
-
 let pp ppf { year; month; day; _ } =
-  Format.fprintf ppf "%02d/%02d/%04d" day (month_to_int month) year
+  Format.fprintf ppf "%02d/%02d/%04d" day (month_to_int month + 1) year
 
 let to_string d = Format.asprintf "%a" pp d
 
@@ -243,3 +229,48 @@ let equal_day_of_week a b =
   | Sat, Sat -> true
   | Sun, Sun -> true
   | _ -> false
+
+let add_month date value =
+  let current_year = year_of date in
+  let current_day = day_of date in
+  let current_month = month_of date in
+  let month_i = month_to_int current_month in
+  let year_offset = (month_i + value) / 12 in
+  let month =
+    match Util.modulo (month_i + value) 12 + 1 |> month_from_int with
+    | Ok x -> x
+    | _ -> failwith "unreachable_case"
+  in
+  let year = current_year + year_offset + if value >= 0 then 0 else 1 in
+  let day = Int.max (days_in_month year month) current_day in
+  { year; month; day }
+
+let make_matrix ~date ~duration ~steps =
+  let arr = Array.make steps (date, date) in
+  let rec aux start_date x =
+    if x >= steps then ()
+    else
+      let end_date = add_month start_date duration |> last_day_of_month in
+      let () = Array.set arr x (start_date, end_date) in
+      aux (add_month end_date 1 |> first_day_of_month) (succ x)
+  in
+  let () = aux (first_day_of_month date) 0 in
+  arr
+
+let quarters date n = make_matrix ~date ~duration:2 ~steps:n
+
+let compare a b =
+  let f { year; month; day; _ } =
+    (year * 10000) + ((month_to_int month + 1) * 100) + day
+  in
+  Int.compare (f a) (f b)
+
+let equal a b = Int.equal 0 (compare a b)
+let ( = ) = equal
+let ( <> ) x y = not (equal x y)
+let ( > ) x y = compare x y > 0
+let ( >= ) x y = compare x y >= 0
+let ( < ) x y = compare x y < 0
+let ( <= ) x y = compare x y <= 0
+let ( + ) d x = add_month d x
+let ( - ) d x = add_month d (-x)

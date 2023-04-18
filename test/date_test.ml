@@ -25,6 +25,12 @@ let date = testable Date.pp Date.equal
 let day_of_week = testable Date.pp_day_of_week Date.equal_day_of_week
 let result x = result x (testable Date.pp_error Date.equal_error)
 
+let range a b =
+  let open Util.Result in
+  let* a = Date.from_string a in
+  let+ b = Date.from_string b in
+  (a, b)
+
 let from_string_1 =
   test_case "make a valid date using [from_string]" `Quick (fun () ->
       let expected = Date.make ~year:2023 ~month:Date.Apr ~day:16 in
@@ -109,6 +115,126 @@ let from_string_11 =
       let computed = Date.from_string date_rep in
       check (result date) "should be the same" expected computed)
 
+let first_day_of_month_1 =
+  test_case "make a valid date and move to the first day of the month" `Quick
+    (fun () ->
+      let expected = Date.from_string "01/04/2023" in
+      let computed =
+        Util.Result.(Date.(from_string "18/04/2023" >|= first_day_of_month))
+      in
+      check (result date) "should be the same" expected computed;
+      check (result day_of_week) "should be the same" (Ok Sat)
+        Util.Result.(computed >|= Date.weekday_of))
+
+let last_day_of_month_1 =
+  test_case "make a valid date and move to the last day of the month" `Quick
+    (fun () ->
+      let expected = Date.from_string "30/04/2023" in
+      let computed =
+        Util.Result.(Date.(from_string "18/04/2023" >|= last_day_of_month))
+      in
+      check (result date) "should be the same" expected computed;
+      check (result day_of_week) "should be the same" (Ok Sun)
+        Util.Result.(computed >|= Date.weekday_of))
+
+let month_range_1 =
+  test_case "make a valid date and compute the map range" `Quick (fun () ->
+      let open Util.Result in
+      let expected =
+        let* a = Date.from_string "01/04/2023" in
+        let+ b = Date.from_string "30/04/2023" in
+        (a, b)
+      in
+
+      let computed = Date.(from_string "18/04/2023" >|= month_range) in
+      let expected_dow = Ok Date.(Sat, Sun) in
+      let computed_dow =
+        let+ a, b = computed in
+        (Date.weekday_of a, Date.weekday_of b)
+      in
+      check (result @@ pair date date) "should be the same" expected computed;
+      check
+        (result @@ pair day_of_week day_of_week)
+        "should be the same" expected_dow computed_dow)
+
+let month_range_2 =
+  test_case "make a valid date and compute the map range" `Quick (fun () ->
+      let open Util.Result in
+      let expected =
+        let* a = Date.from_string "01/02/2023" in
+        let+ b = Date.from_string "28/02/2023" in
+        (a, b)
+      in
+
+      let computed = Date.(from_string "7/2/2023" >|= month_range) in
+      let expected_dow = Ok Date.(Wed, Tue) in
+      let computed_dow =
+        let+ a, b = computed in
+        (Date.weekday_of a, Date.weekday_of b)
+      in
+      check (result @@ pair date date) "should be the same" expected computed;
+      check
+        (result @@ pair day_of_week day_of_week)
+        "should be the same" expected_dow computed_dow)
+
+let month_range_3 =
+  test_case "make a valid date and compute the map range" `Quick (fun () ->
+      let open Util.Result in
+      let expected =
+        let* a = Date.from_string "01/02/2032" in
+        let+ b = Date.from_string "29/02/2032" in
+        (a, b)
+      in
+
+      let computed = Date.(from_string "12/2/2032" >|= month_range) in
+      let expected_dow = Ok Date.(Sun, Sun) in
+      let computed_dow =
+        let+ a, b = computed in
+        (Date.weekday_of a, Date.weekday_of b)
+      in
+      check (result @@ pair date date) "should be the same" expected computed;
+      check
+        (result @@ pair day_of_week day_of_week)
+        "should be the same" expected_dow computed_dow)
+
+let check_matrix source index a b =
+  let open Util.Result in
+  let computed = source >|= fun source -> Array.get source index in
+  let expected = range a b in
+  check (result @@ pair date date) "should be the same" expected computed
+
+let quarter_1 =
+  test_case "make a quarter matrix" `Quick (fun () ->
+      let open Util.Result in
+      let computed =
+        let+ date = Date.from_string "26/02/2023" in
+        Date.quarters date 8
+      in
+      check_matrix computed 0 "1/2/2023" "30/4/2023";
+      check_matrix computed 1 "1/5/2023" "31/7/2023";
+      check_matrix computed 2 "1/8/2023" "31/10/2023";
+      check_matrix computed 3 "1/11/2023" "31/1/2024";
+      check_matrix computed 4 "1/2/2024" "30/4/2024";
+      check_matrix computed 5 "1/5/2024" "31/7/2024";
+      check_matrix computed 6 "1/8/2024" "31/10/2024";
+      check_matrix computed 7 "1/11/2024" "31/1/2025")
+
+let quarter_2 =
+  test_case "make a quarter matrix" `Quick (fun () ->
+      let open Util.Result in
+      let computed =
+        let+ date = Date.from_string "24/10/2054" in
+        Date.quarters date 8
+      in
+      check_matrix computed 0 "01/10/2054" "31/12/2054";
+      check_matrix computed 1 "01/01/2055" "31/03/2055";
+      check_matrix computed 2 "01/04/2055" "30/06/2055";
+      check_matrix computed 3 "01/07/2055" "30/09/2055";
+      check_matrix computed 4 "01/10/2055" "31/12/2055";
+      check_matrix computed 5 "01/01/2056" "31/03/2056";
+      check_matrix computed 6 "01/04/2056" "30/06/2056";
+      check_matrix computed 7 "01/07/2056" "30/09/2056")
+
 let cases =
   ( "Date"
   , [
@@ -123,4 +249,11 @@ let cases =
     ; from_string_9
     ; from_string_10
     ; from_string_11
+    ; first_day_of_month_1
+    ; last_day_of_month_1
+    ; month_range_1
+    ; month_range_2
+    ; month_range_3
+    ; quarter_1
+    ; quarter_2
     ] )

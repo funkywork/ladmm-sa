@@ -69,6 +69,11 @@ val ( <= ) : t -> t -> bool
 val first_day_of_month : t -> t
 val last_day_of_month : t -> t
 val month_range : t -> t * t
+val add_month : t -> int -> t
+val ( + ) : t -> int -> t
+val ( - ) : t -> int -> t
+val make_matrix : date:t -> duration:int -> steps:int -> (t * t) array
+val quarters : t -> int -> (t * t) array
 
 (** {1 Util} *)
 
