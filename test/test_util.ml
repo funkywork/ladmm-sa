@@ -27,6 +27,13 @@ let get_date = function Ok x -> x | Error _ -> raise Invalid_date
 let date_testable = testable Date.pp Date.equal
 let day_of_week_testable = testable Date.pp_day_of_week Date.equal_day_of_week
 let date_result_testable x = result x (testable Date.pp_error Date.equal_error)
+let num_testable = testable Num.pp Num.equal
+
+let find_result_testable x =
+  let e = Alcotest.equal x and p = Alcotest.pp x in
+  Alcotest.testable
+    (Temporal_db.pp_find_result p)
+    (Temporal_db.equal_find_result e)
 
 let date_range a b =
   let open Util.Result in
