@@ -17,3 +17,16 @@
 
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>. *)
+
+(** Defines the constants of the application. To be modified according to
+    governmental updates.
+
+    As the application must be deployable on a static server, this data is
+    hardcoded but this will change if a server is set up. Moreover, as the whole
+    logic is client driven, it would be possible to imagine a Wordpress plugin
+    serving an API consumed by this client. Currently, this data is located in
+    the configuration. *)
+
+val daily_reference_salary : Num.t Temporal_db.t
+(** The reference daily wage used to calculate the number of days worked from a
+    gross wage. *)

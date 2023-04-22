@@ -21,6 +21,7 @@
 module Temporal_map = Map.Make (Date)
 
 type 'a t = 'a Temporal_map.t
+type 'a find_result = Found of Date.t * 'a | Out_of_bound of Date.t * 'a
 
 let from_list list =
   List.fold_left
@@ -41,5 +42,26 @@ let find_minimal_after ?(included = true) tmap date =
   Temporal_map.find_first_opt (fun key -> valid date key) tmap
 
 let find_maximal_after ?(included = true) tmap date =
-  let valid = if included then Date.( >= ) else Date.( >= ) in
+  let valid = if included then Date.( >= ) else Date.( > ) in
   Temporal_map.find_last_opt (fun key -> valid date key) tmap
+
+let find_for ?(included = true) tmap date =
+  match find_maximal_after ~included tmap date with
+  | Some (d, v) -> Found (d, v)
+  | None ->
+      let d, v = Temporal_map.find_first (fun _ -> true) tmap in
+      Out_of_bound (d, v)
+
+let equal_find_result aux a b =
+  match (a, b) with
+  | Found (date_a, value_a), Found (date_b, value_b)
+  | Out_of_bound (date_a, value_a), Out_of_bound (date_b, value_b) ->
+      Date.equal date_a date_b && aux value_a value_b
+  | _ -> false
+
+let pp_find_result aux ppf result =
+  Format.fprintf ppf "%s"
+    (match result with
+    | Found (d, v) -> Format.asprintf "Found (%a, %a)" Date.pp d aux v
+    | Out_of_bound (d, v) ->
+        Format.asprintf "Out_of_bound (%a, %a)" Date.pp d aux v)

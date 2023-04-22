@@ -20,20 +20,7 @@
 
 open Alcotest
 open Ladmm_lib
-
-exception Invalid_date
-
-let get = function Ok x -> x | Error _ -> raise Invalid_date
-let date x = Date.from_string x |> get
-let result x = result x (testable Quarters.pp_error Quarters.equal_error)
-
-let check_by_date q x e =
-  let computed = Quarters.get_by_date q (date x) in
-  check (result int) "should be equal" e computed
-
-let check_by_range q a b e =
-  let computed = Quarters.get_by_range q (date a) (date b) in
-  check (result int) "should be equal" e computed
+open Test_util
 
 let init_1 =
   test_case "make a valid quarters and represent-it" `Quick (fun () ->
@@ -61,27 +48,27 @@ let init_1 =
 let get_by_date_1 =
   test_case "get a valid date from a quarters" `Quick (fun () ->
       let q = date "28/02/2023" |> Quarters.init in
-      check_by_date q "1/2/2023" (Ok 0);
-      check_by_date q "22/04/2023" (Ok 0);
-      check_by_date q "7/06/2023" (Ok 1);
-      check_by_date q "18/09/2024" (Ok 6);
-      check_by_date q "31/01/2025" (Ok 7);
-      check_by_date q "22/01/2023" (Error (`No_quarter "22/01/2023"));
-      check_by_date q "22/04/2025" (Error (`No_quarter "22/04/2025")))
+      check_quarters_by_date q "1/2/2023" (Ok 0);
+      check_quarters_by_date q "22/04/2023" (Ok 0);
+      check_quarters_by_date q "7/06/2023" (Ok 1);
+      check_quarters_by_date q "18/09/2024" (Ok 6);
+      check_quarters_by_date q "31/01/2025" (Ok 7);
+      check_quarters_by_date q "22/01/2023" (Error (`No_quarter "22/01/2023"));
+      check_quarters_by_date q "22/04/2025" (Error (`No_quarter "22/04/2025")))
 
 let get_by_range_1 =
   test_case "get a valid range from a quarter" `Quick (fun () ->
       let q = date "28/02/2023" |> Quarters.init in
-      check_by_range q "12/02/2023" "01/02/2023"
+      check_quarters_by_range q "12/02/2023" "01/02/2023"
         (Error (`Range_invalid "12/02/2023 -> 01/02/2023"));
-      check_by_range q "12/02/2023" "27/04/2023" (Ok 0);
-      check_by_range q "12/06/2023" "22/06/2023" (Ok 1);
-      check_by_range q "03/11/2024" "24/11/2024" (Ok 7);
-      check_by_range q "12/02/2021" "27/04/2021"
+      check_quarters_by_range q "12/02/2023" "27/04/2023" (Ok 0);
+      check_quarters_by_range q "12/06/2023" "22/06/2023" (Ok 1);
+      check_quarters_by_range q "03/11/2024" "24/11/2024" (Ok 7);
+      check_quarters_by_range q "12/02/2021" "27/04/2021"
         (Error (`No_quarter "12/02/2021 -> 27/04/2021"));
-      check_by_range q "12/02/2025" "27/04/2028"
+      check_quarters_by_range q "12/02/2025" "27/04/2028"
         (Error (`No_quarter "12/02/2025 -> 27/04/2028"));
-      check_by_range q "04/04/2023" "02/06/2023"
+      check_quarters_by_range q "04/04/2023" "02/06/2023"
         (Error (`Range_overlapping "04/04/2023 -> 02/06/2023")))
 
 let cases = ("Quarters", [ init_1; get_by_date_1; get_by_range_1 ])

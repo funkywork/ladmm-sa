@@ -18,34 +18,31 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>. *)
 
-(** A key value storage indexed by dates. *)
+open Alcotest
+open Ladmm_lib
 
-type 'a t
-type 'a find_result = Found of Date.t * 'a | Out_of_bound of Date.t * 'a
+exception Invalid_date
 
-(** {1 Creation} *)
+let get_date = function Ok x -> x | Error _ -> raise Invalid_date
+let date_testable = testable Date.pp Date.equal
+let day_of_week_testable = testable Date.pp_day_of_week Date.equal_day_of_week
+let date_result_testable x = result x (testable Date.pp_error Date.equal_error)
 
-val from_list : (Date.t * 'a) list -> 'a t
+let date_range a b =
+  let open Util.Result in
+  let* a = Date.from_string a in
+  let+ b = Date.from_string b in
+  (a, b)
 
-(** {1 Find operation} *)
+let date x = Date.from_string x |> get_date
 
-val find : 'a t -> Date.t -> 'a option
+let quarters_result_testable x =
+  result x (testable Quarters.pp_error Quarters.equal_error)
 
-val find_minimal_after :
-  ?included:bool -> 'a t -> Date.t -> (Date.t * 'a) option
+let check_quarters_by_date q x e =
+  let computed = Quarters.get_by_date q (date x) in
+  check (quarters_result_testable int) "should be equal" e computed
 
-val find_maximal_after :
-  ?included:bool -> 'a t -> Date.t -> (Date.t * 'a) option
-
-val find_for : ?included:bool -> 'a t -> Date.t -> 'a find_result
-
-(** {1 Util} *)
-
-val pp : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a t -> unit
-val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
-
-val pp_find_result :
-  (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a find_result -> unit
-
-val equal_find_result :
-  ('a -> 'a -> bool) -> 'a find_result -> 'a find_result -> bool
+let check_quarters_by_range q a b e =
+  let computed = Quarters.get_by_range q (date a) (date b) in
+  check (quarters_result_testable int) "should be equal" e computed

@@ -20,4 +20,10 @@
 
 let () =
   Alcotest.run "Ladmm_lib"
-    [ Num_test.cases; Percent_test.cases; Date_test.cases; Quarters_test.cases ]
+    [
+      Num_test.cases
+    ; Percent_test.cases
+    ; Date_test.cases
+    ; Quarters_test.cases
+    ; Temporal_db_test.cases
+    ]

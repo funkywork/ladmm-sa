@@ -20,31 +20,30 @@
 
 open Alcotest
 open Ladmm_lib
-
-let date = testable Date.pp Date.equal
-let day_of_week = testable Date.pp_day_of_week Date.equal_day_of_week
-let result x = result x (testable Date.pp_error Date.equal_error)
-
-let range a b =
-  let open Util.Result in
-  let* a = Date.from_string a in
-  let+ b = Date.from_string b in
-  (a, b)
+open Test_util
 
 let from_string_1 =
   test_case "make a valid date using [from_string]" `Quick (fun () ->
       let expected = Date.make ~year:2023 ~month:Date.Apr ~day:16 in
       let computed = Date.from_string "16/04/2023" in
-      check (result date) "should be the same" expected computed;
-      check (result day_of_week) "should be the same" (Ok Sun)
+      check
+        (date_result_testable date_testable)
+        "should be the same" expected computed;
+      check
+        (date_result_testable day_of_week_testable)
+        "should be the same" (Ok Sun)
         Util.Result.(computed >|= Date.weekday_of))
 
 let from_string_2 =
   test_case "make a valid date using [from_string]" `Quick (fun () ->
       let expected = Date.make ~year:2023 ~month:Date.Nov ~day:3 in
       let computed = Date.from_string "3/11/2023" in
-      check (result date) "should be the same" expected computed;
-      check (result day_of_week) "should be the same" (Ok Fri)
+      check
+        (date_result_testable date_testable)
+        "should be the same" expected computed;
+      check
+        (date_result_testable day_of_week_testable)
+        "should be the same" (Ok Fri)
         Util.Result.(computed >|= Date.weekday_of))
 
 let from_string_3 =
@@ -52,14 +51,18 @@ let from_string_3 =
     `Quick (fun () ->
       let expected = Error (`Year_too_small 1968) in
       let computed = Date.from_string "01/05/1968" in
-      check (result date) "should be the same" expected computed)
+      check
+        (date_result_testable date_testable)
+        "should be the same" expected computed)
 
 let from_string_4 =
   test_case "make an invalid date using [from_string] because year is too high"
     `Quick (fun () ->
       let expected = Error (`Year_too_big 3001) in
       let computed = Date.from_string "3/11/3001" in
-      check (result date) "should be the same" expected computed)
+      check
+        (date_result_testable date_testable)
+        "should be the same" expected computed)
 
 let from_string_5 =
   test_case
@@ -67,7 +70,9 @@ let from_string_5 =
     `Quick (fun () ->
       let expected = Error (`Day_negative_or_null (-3)) in
       let computed = Date.from_string "-3/11/2010" in
-      check (result date) "should be the same" expected computed)
+      check
+        (date_result_testable date_testable)
+        "should be the same" expected computed)
 
 let from_string_6 =
   test_case
@@ -75,21 +80,27 @@ let from_string_6 =
     `Quick (fun () ->
       let expected = Error (`Day_negative_or_null 0) in
       let computed = Date.from_string "000/11/2010" in
-      check (result date) "should be the same" expected computed)
+      check
+        (date_result_testable date_testable)
+        "should be the same" expected computed)
 
 let from_string_7 =
   test_case "make an invalid date using [from_string] because month is invalid"
     `Quick (fun () ->
       let expected = Error (`Month_invalid 0) in
       let computed = Date.from_string "22/00/2010" in
-      check (result date) "should be the same" expected computed)
+      check
+        (date_result_testable date_testable)
+        "should be the same" expected computed)
 
 let from_string_8 =
   test_case "make an invalid date using [from_string] because month is invalid"
     `Quick (fun () ->
       let expected = Error (`Month_invalid 23) in
       let computed = Date.from_string "22/23/2010" in
-      check (result date) "should be the same" expected computed)
+      check
+        (date_result_testable date_testable)
+        "should be the same" expected computed)
 
 let from_string_9 =
   test_case "make an invalid date using [from_string] because string is invalid"
@@ -97,7 +108,9 @@ let from_string_9 =
       let date_rep = "foo" in
       let expected = Error (`Date_invalid date_rep) in
       let computed = Date.from_string date_rep in
-      check (result date) "should be the same" expected computed)
+      check
+        (date_result_testable date_testable)
+        "should be the same" expected computed)
 
 let from_string_10 =
   test_case "make an invalid date using [from_string] because string is invalid"
@@ -105,7 +118,9 @@ let from_string_10 =
       let date_rep = "1/2/3/4" in
       let expected = Error (`Date_invalid date_rep) in
       let computed = Date.from_string date_rep in
-      check (result date) "should be the same" expected computed)
+      check
+        (date_result_testable date_testable)
+        "should be the same" expected computed)
 
 let from_string_11 =
   test_case "make an invalid date using [from_string] because string is invalid"
@@ -113,7 +128,9 @@ let from_string_11 =
       let date_rep = "foo/bar/2022" in
       let expected = Error (`Date_invalid date_rep) in
       let computed = Date.from_string date_rep in
-      check (result date) "should be the same" expected computed)
+      check
+        (date_result_testable date_testable)
+        "should be the same" expected computed)
 
 let first_day_of_month_1 =
   test_case "make a valid date and move to the first day of the month" `Quick
@@ -122,8 +139,12 @@ let first_day_of_month_1 =
       let computed =
         Util.Result.(Date.(from_string "18/04/2023" >|= first_day_of_month))
       in
-      check (result date) "should be the same" expected computed;
-      check (result day_of_week) "should be the same" (Ok Sat)
+      check
+        (date_result_testable date_testable)
+        "should be the same" expected computed;
+      check
+        (date_result_testable day_of_week_testable)
+        "should be the same" (Ok Sat)
         Util.Result.(computed >|= Date.weekday_of))
 
 let last_day_of_month_1 =
@@ -133,8 +154,12 @@ let last_day_of_month_1 =
       let computed =
         Util.Result.(Date.(from_string "18/04/2023" >|= last_day_of_month))
       in
-      check (result date) "should be the same" expected computed;
-      check (result day_of_week) "should be the same" (Ok Sun)
+      check
+        (date_result_testable date_testable)
+        "should be the same" expected computed;
+      check
+        (date_result_testable day_of_week_testable)
+        "should be the same" (Ok Sun)
         Util.Result.(computed >|= Date.weekday_of))
 
 let month_range_1 =
@@ -152,9 +177,11 @@ let month_range_1 =
         let+ a, b = computed in
         (Date.weekday_of a, Date.weekday_of b)
       in
-      check (result @@ pair date date) "should be the same" expected computed;
       check
-        (result @@ pair day_of_week day_of_week)
+        (date_result_testable @@ pair date_testable date_testable)
+        "should be the same" expected computed;
+      check
+        (date_result_testable @@ pair day_of_week_testable day_of_week_testable)
         "should be the same" expected_dow computed_dow)
 
 let month_range_2 =
@@ -172,9 +199,11 @@ let month_range_2 =
         let+ a, b = computed in
         (Date.weekday_of a, Date.weekday_of b)
       in
-      check (result @@ pair date date) "should be the same" expected computed;
       check
-        (result @@ pair day_of_week day_of_week)
+        (date_result_testable @@ pair date_testable date_testable)
+        "should be the same" expected computed;
+      check
+        (date_result_testable @@ pair day_of_week_testable day_of_week_testable)
         "should be the same" expected_dow computed_dow)
 
 let month_range_3 =
@@ -192,16 +221,20 @@ let month_range_3 =
         let+ a, b = computed in
         (Date.weekday_of a, Date.weekday_of b)
       in
-      check (result @@ pair date date) "should be the same" expected computed;
       check
-        (result @@ pair day_of_week day_of_week)
+        (date_result_testable @@ pair date_testable date_testable)
+        "should be the same" expected computed;
+      check
+        (date_result_testable @@ pair day_of_week_testable day_of_week_testable)
         "should be the same" expected_dow computed_dow)
 
 let check_matrix source index a b =
   let open Util.Result in
   let computed = source >|= fun source -> Array.get source index in
-  let expected = range a b in
-  check (result @@ pair date date) "should be the same" expected computed
+  let expected = date_range a b in
+  check
+    (date_result_testable @@ pair date_testable date_testable)
+    "should be the same" expected computed
 
 let quarter_1 =
   test_case "make a quarter matrix" `Quick (fun () ->
