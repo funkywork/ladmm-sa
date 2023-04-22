@@ -18,22 +18,20 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>. *)
 
-(** Defines the constants of the application. To be modified according to
-    governmental updates.
+(** A key value storage indexed by the couple [month/day]. *)
 
-    As the application must be deployable on a static server, this data is
-    hardcoded but this will change if a server is set up. Moreover, as the whole
-    logic is client driven, it would be possible to imagine a Wordpress plugin
-    serving an API consumed by this client. Currently, this data is located in
-    the configuration. *)
+type 'a t
 
-val daily_reference_salary : Num.t Temporal_db.t
-(** The reference daily wage used to calculate the number of days worked from a
-    gross wage. *)
+(** {1 Creation} *)
 
-val volatil_annual_leave : string Temporal_db.t
-(** Holidays that cannot be calculated statically (Easter and Ascension, the
-    latter depending on the calculation of Easter). *)
+val from_list : ((Date.month * int) * 'a) list -> 'a t
 
-val known_annual_leave : string Constant_db.t
-(** List of static holidays (which do not change from year to year). *)
+(** {1 Find operation} *)
+
+val find : 'a t -> Date.t -> 'a option
+
+(** {1 Util} *)
+
+val v : Date.month -> int -> 'a -> (Date.month * int) * 'a
+val pp : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a t -> unit
+val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool

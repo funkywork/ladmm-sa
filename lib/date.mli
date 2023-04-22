@@ -71,18 +71,23 @@ val max : t -> t -> t
 val first_day_of_month : t -> t
 val last_day_of_month : t -> t
 val month_range : t -> t * t
+val next : t -> t
+val prev : t -> t
 val add_month : t -> int -> t
 val ( + ) : t -> int -> t
 val ( - ) : t -> int -> t
 val make_matrix : date:t -> duration:int -> steps:int -> (t * t) array
 val quarters : t -> int -> (t * t) array
+val unfold : t -> t -> t list
 
 (** {1 Util} *)
 
 val pp : Format.formatter -> t -> unit
 val to_string : t -> string
 val pp_day_of_week : Format.formatter -> day_of_week -> unit
+val pp_month : Format.formatter -> month -> unit
 val equal_day_of_week : day_of_week -> day_of_week -> bool
+val month_to_int : month -> int
 
 (** {1 Error util} *)
 

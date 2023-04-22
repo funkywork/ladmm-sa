@@ -34,3 +34,38 @@ let daily_reference_salary =
      ]
     |> List.map (fun (d, v) -> (refute @@ Date.from_string d, Num.from_float v))
     )
+
+let volatil_annual_leave =
+  Temporal_db.from_list
+    ([
+       ("17/04/2017", "25/05/2017")
+     ; ("02/04/2018", "10/05/2018")
+     ; ("22/04/2019", "30/05/2019")
+     ; ("13/04/2020", "21/05/2020")
+     ; ("05/04/2021", "13/05/2021")
+     ; ("18/04/2022", "26/05/2022")
+     ; ("10/04/2023", "18/05/2023")
+     ; ("01/04/2024", "09/05/2024")
+     ; ("21/04/2025", "29/05/2025")
+     ; ("06/04/2026", "14/05/2026")
+     ; ("29/03/2027", "06/05/2027")
+     ]
+    |> List.concat_map (fun (p, a) ->
+           [
+             (refute @@ Date.from_string p, "Lundi de Pâques")
+           ; (refute @@ Date.from_string a, "Ascension")
+           ]))
+
+let known_annual_leave =
+  Constant_db.(
+    from_list
+      Date.
+        [
+          v Jan 1 "Jour de l'an"
+        ; v May 1 "Fête du travail"
+        ; v Jul 21 "Fête nationale"
+        ; v Aug 15 "Assomption"
+        ; v Nov 1 "Toussaint"
+        ; v Nov 11 "Armistice de 1918"
+        ; v Dec 25 "Noël"
+        ])

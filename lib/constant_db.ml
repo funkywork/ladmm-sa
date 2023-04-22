@@ -18,22 +18,32 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>. *)
 
-(** Defines the constants of the application. To be modified according to
-    governmental updates.
+module Constant_map = Map.Make (struct
+  type t = Date.month * int
 
-    As the application must be deployable on a static server, this data is
-    hardcoded but this will change if a server is set up. Moreover, as the whole
-    logic is client driven, it would be possible to imagine a Wordpress plugin
-    serving an API consumed by this client. Currently, this data is located in
-    the configuration. *)
+  let normalize (m, d) = ((Date.month_to_int m + 1) * 100) + d
+  let compare a b = Int.compare (normalize a) (normalize b)
+end)
 
-val daily_reference_salary : Num.t Temporal_db.t
-(** The reference daily wage used to calculate the number of days worked from a
-    gross wage. *)
+type 'a t = 'a Constant_map.t
 
-val volatil_annual_leave : string Temporal_db.t
-(** Holidays that cannot be calculated statically (Easter and Ascension, the
-    latter depending on the calculation of Easter). *)
+let from_list list =
+  List.fold_left
+    (fun cmap (key, value) -> Constant_map.add key value cmap)
+    Constant_map.empty list
 
-val known_annual_leave : string Constant_db.t
-(** List of static holidays (which do not change from year to year). *)
+let pp aux ppf cmap =
+  Format.fprintf ppf "Constant_map %a"
+    (Format.pp_print_seq (fun ppf ((m, d), value) ->
+         Format.fprintf ppf "%02d %a => %a" d Date.pp_month m aux value))
+    (Constant_map.to_seq cmap)
+
+let equal aux a b = Constant_map.equal aux a b
+
+let find cmap date =
+  let month = Date.month_of date in
+  let day = Date.day_of date in
+  let key = (month, day) in
+  Constant_map.find_opt key cmap
+
+let v m d v = ((m, d), v)

@@ -268,6 +268,58 @@ let quarter_2 =
       check_matrix computed 6 "01/04/2056" "30/06/2056";
       check_matrix computed 7 "01/07/2056" "30/09/2056")
 
+let next_1 =
+  test_case "compute next days from date" `Quick (fun () ->
+      let expected =
+        [
+          "24/10/2023"
+        ; "01/11/1986"
+        ; "06/05/1999"
+        ; "29/02/2024"
+        ; "01/03/2023"
+        ; "01/01/2000"
+        ]
+        |> List.map (fun x -> date x)
+      in
+      let computed =
+        [
+          "23/10/2023"
+        ; "31/10/1986"
+        ; "05/05/1999"
+        ; "28/02/2024"
+        ; "28/02/2023"
+        ; "31/12/1999"
+        ]
+        |> List.map (fun x -> Date.next (date x))
+      in
+      check (list date_testable) "should be equal" expected computed)
+
+let prev_1 =
+  test_case "compute previous days from date" `Quick (fun () ->
+      let expected =
+        [
+          "22/10/2023"
+        ; "31/10/1986"
+        ; "04/05/1999"
+        ; "28/02/2024"
+        ; "28/02/2023"
+        ; "31/12/1999"
+        ]
+        |> List.map (fun x -> date x)
+      in
+      let computed =
+        [
+          "23/10/2023"
+        ; "01/11/1986"
+        ; "05/05/1999"
+        ; "29/02/2024"
+        ; "01/03/2023"
+        ; "01/01/2000"
+        ]
+        |> List.map (fun x -> Date.prev (date x))
+      in
+      check (list date_testable) "should be equal" expected computed)
+
 let cases =
   ( "Date"
   , [
@@ -289,4 +341,6 @@ let cases =
     ; month_range_3
     ; quarter_1
     ; quarter_2
+    ; next_1
+    ; prev_1
     ] )

@@ -259,8 +259,56 @@ let make_matrix ~date ~duration ~steps =
 
 let quarters date n = make_matrix ~date ~duration:2 ~steps:n
 
+let next_month = function
+  | Jan -> Feb
+  | Feb -> Mar
+  | Mar -> Apr
+  | Apr -> May
+  | May -> Jun
+  | Jun -> Jul
+  | Jul -> Aug
+  | Aug -> Sep
+  | Sep -> Oct
+  | Oct -> Nov
+  | Nov -> Dec
+  | Dec -> Jan
+
+let prev_month = function
+  | Jan -> Dec
+  | Feb -> Jan
+  | Mar -> Feb
+  | Apr -> Mar
+  | May -> Apr
+  | Jun -> May
+  | Jul -> Jun
+  | Aug -> Jul
+  | Sep -> Aug
+  | Oct -> Sep
+  | Nov -> Oct
+  | Dec -> Nov
+
+let next { year; month; day } =
+  let dim = days_in_month year month in
+  let new_year, new_month, new_day =
+    if day = dim then
+      ((year + match month with Dec -> 1 | _ -> 0), next_month month, 1)
+    else (year, month, day + 1)
+  in
+  { year = new_year; month = new_month; day = new_day }
+
+let prev { year; month; day } =
+  let new_year, new_month, new_day =
+    if day = 1 then
+      let new_year = match month with Jan -> year - 1 | _ -> year in
+      let new_month = prev_month month in
+      let new_day = days_in_month new_year new_month in
+      (new_year, new_month, new_day)
+    else (year, month, day - 1)
+  in
+  { year = new_year; month = new_month; day = new_day }
+
 let compare a b =
-  let f { year; month; day; _ } =
+  let f { year; month; day } =
     (year * 10000) + ((month_to_int month + 1) * 100) + day
   in
   Int.compare (f a) (f b)
@@ -276,3 +324,11 @@ let ( + ) d x = add_month d x
 let ( - ) d x = add_month d (-x)
 let min a b = if b > a then a else b
 let max a b = if a < b then a else b
+let sort_range a b = if a < b then (a, b) else (b, a)
+
+let unfold start_date end_date =
+  let a, b = sort_range start_date end_date in
+  let rec aux acc curr =
+    if curr < a then acc else aux (curr :: acc) (prev curr)
+  in
+  aux [] b
