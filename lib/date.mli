@@ -79,6 +79,7 @@ val ( - ) : t -> int -> t
 val make_matrix : date:t -> duration:int -> steps:int -> (t * t) array
 val quarters : t -> int -> (t * t) array
 val unfold : t -> t -> t list
+val rev_unfold : t -> t -> t list
 
 (** {1 Util} *)
 

@@ -47,3 +47,23 @@ let equal_status a b =
       Date.equal da db && Date.equal_day_of_week dowa dowb
   | Reason (da, ra), Reason (db, rb) -> Date.equal da db && String.equal ra rb
   | _, _ -> false
+
+type diagnosis = {
+    workdays : int
+  ; saturdays : int
+  ; sundays : int
+  ; leaves : (Date.t * string) list
+}
+
+let from_range a b =
+  let list = Date.rev_unfold a b in
+  List.fold_left
+    (fun acc date ->
+      match from_date date with
+      | Workday _ -> { acc with workdays = succ acc.workdays }
+      | Weekend (_, Date.Sat) -> { acc with saturdays = succ acc.saturdays }
+      | Weekend (_, _) -> { acc with sundays = succ acc.sundays }
+      | Reason (date, reason) ->
+          { acc with leaves = (date, reason) :: acc.leaves })
+    { workdays = 0; saturdays = 0; sundays = 0; leaves = [] }
+    list

@@ -332,3 +332,10 @@ let unfold start_date end_date =
     if curr < a then acc else aux (curr :: acc) (prev curr)
   in
   aux [] b
+
+let rev_unfold start_date end_date =
+  let a, b = sort_range start_date end_date in
+  let rec aux acc curr =
+    if curr > b then acc else aux (curr :: acc) (next curr)
+  in
+  aux [] a

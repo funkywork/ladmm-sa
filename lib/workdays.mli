@@ -33,3 +33,16 @@ type status =
 val from_date : Date.t -> status
 val pp_status : Format.formatter -> status -> unit
 val equal_status : status -> status -> bool
+
+(** {1 Diagnosis}
+
+    Builds an approximation of a diagnostis of a Date range. *)
+
+type diagnosis = {
+    workdays : int
+  ; saturdays : int
+  ; sundays : int
+  ; leaves : (Date.t * string) list
+}
+
+val from_range : Date.t -> Date.t -> diagnosis
