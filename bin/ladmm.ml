@@ -17,3 +17,7 @@
 
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>. *)
+
+open Js_of_ocaml
+
+let () = Firebug.console##log (Js.string "Hello world")

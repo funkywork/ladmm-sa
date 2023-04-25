@@ -3,5 +3,5 @@
   (modes js)
   (preprocess (pps js_of_ocaml-ppx))
   (js_of_ocaml (flags :standard))
-  (promote (until-clean))
+  (promote (until-clean) (into "../priv"))
   (libraries ocaml-vdom ladmm_lib))

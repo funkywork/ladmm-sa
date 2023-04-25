@@ -1,0 +1,13 @@
+:root {
+  --global-background: #182625;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--global-background);
+}
