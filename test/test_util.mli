@@ -35,11 +35,15 @@ val find_result_testable :
   'a Alcotest.testable -> 'a Temporal_db.find_result Alcotest.testable
 
 val num_testable : Num.t Alcotest.testable
+val status_testable : Workdays.status Alcotest.testable
 
 val date_range :
   string -> string -> (Date.t * Date.t, [> Sigs.date_error ]) result
 
 val date : string -> Date.t
+val workday : string -> Workdays.status
+val weekend : string -> Date.day_of_week -> Workdays.status
+val leave : string -> string -> Workdays.status
 
 val quarters_result_testable :
   'a Alcotest.testable -> ('a, Sigs.quarters_error) result Alcotest.testable

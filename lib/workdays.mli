@@ -17,3 +17,19 @@
 
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>. *)
+
+(** Allows the calculation of potential working days via an approximation. *)
+
+(** {1 Status of a day}
+
+    Builds an approximation of the type of day (weekend, holiday or working day)
+    based on the databases defined in [Config]. *)
+
+type status =
+  | Workday of Date.t
+  | Weekend of Date.t * Date.day_of_week
+  | Reason of Date.t * string
+
+val from_date : Date.t -> status
+val pp_status : Format.formatter -> status -> unit
+val equal_status : status -> status -> bool

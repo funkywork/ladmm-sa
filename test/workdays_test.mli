@@ -18,13 +18,5 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>. *)
 
-let () =
-  Alcotest.run "Ladmm_lib"
-    [
-      Num_test.cases
-    ; Percent_test.cases
-    ; Date_test.cases
-    ; Quarters_test.cases
-    ; Temporal_db_test.cases
-    ; Workdays_test.cases
-    ]
+val cases : string * unit Alcotest.test_case list
+(** List of all test-cases. *)

@@ -28,6 +28,7 @@ let date_testable = testable Date.pp Date.equal
 let day_of_week_testable = testable Date.pp_day_of_week Date.equal_day_of_week
 let date_result_testable x = result x (testable Date.pp_error Date.equal_error)
 let num_testable = testable Num.pp Num.equal
+let status_testable = testable Workdays.pp_status Workdays.equal_status
 
 let find_result_testable x =
   let e = Alcotest.equal x and p = Alcotest.pp x in
@@ -42,6 +43,9 @@ let date_range a b =
   (a, b)
 
 let date x = Date.from_string x |> get_date
+let workday x = Workdays.Workday (date x)
+let weekend x dow = Workdays.Weekend (date x, dow)
+let leave x reason = Workdays.Reason (date x, reason)
 
 let quarters_result_testable x =
   result x (testable Quarters.pp_error Quarters.equal_error)
