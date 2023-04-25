@@ -22,4 +22,7 @@
   (depends
     (ocaml (>= 5.0.0))
     (dune (>= 3.0.0))
+    (js_of_ocaml-compiler (>= 5.1.1))
+    (js_of_ocaml-ppx (>= 5.1.1))
+    ocaml-vdom
     (alcotest :with-test)))

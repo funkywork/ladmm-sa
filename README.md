@@ -16,6 +16,7 @@ opam update
 opam switch create . ocaml-base-compiler.5.0.0 --deps-only -y
 eval $(opam env)
 opam install . --deps-only --with-test --with-doc -y
+opam install -y nightmare nightmare_js
 ```
 
 ## Setting up the development environment

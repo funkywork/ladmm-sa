@@ -1,0 +1,7 @@
+(executable
+  (name ladmm)
+  (modes js)
+  (preprocess (pps js_of_ocaml-ppx))
+  (js_of_ocaml (flags :standard))
+  (promote (until-clean))
+  (libraries ocaml-vdom ladmm_lib))
