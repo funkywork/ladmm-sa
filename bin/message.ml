@@ -32,4 +32,5 @@ type t =
   | Check_contract of bool
   | Check_c4 of bool
   | Check_is_artistic of bool
+  | Save_duration_entry
   | Nop

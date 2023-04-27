@@ -225,6 +225,7 @@ let active_template case content =
           ~a:[ class_ "case-period" ]
           (List.map
              (fun (i, s, e) ->
+               let quarter_index = pred i in
                div
                  ~a:[ class_ "quarter" ]
                  [
@@ -242,21 +243,39 @@ let active_template case content =
                          ~a:[ class_ "total" ]
                          [
                            span [ txt "trimestre:" ]
-                         ; span [ txt "0" ]
+                         ; span
+                             [
+                               txt
+                                 (Data.Stored_case.total_days_by_quarter
+                                    quarter_index case
+                                 |> Num.to_string)
+                             ]
                          ; span [ txt "/78" ]
                          ]
                      ; div
                          ~a:[ class_ "total" ]
                          [
                            span [ txt "non-artistique" ]
-                         ; span [ txt "0" ]
+                         ; span
+                             [
+                               txt
+                                 (Data.Stored_case.total_days_non_art
+                                    quarter_index case
+                                 |> Num.to_string)
+                             ]
                          ; span [ txt "/52" ]
                          ]
                      ; div
                          ~a:[ class_ "total" ]
                          [
                            span [ txt "général:" ]
-                         ; span [ txt "0" ]
+                         ; span
+                             [
+                               txt
+                                 (Data.Stored_case.total_days_acc quarter_index
+                                    case
+                                 |> Num.to_string)
+                             ]
                          ; span [ txt "/156" ]
                          ]
                      ]
@@ -295,7 +314,8 @@ let render_duration_button range days_5dw =
   let open Html in
   let args =
     match (range, days_5dw) with
-    | Some (Ok _), Some _ -> [ disabled false ]
+    | Some (Ok _), Some _ ->
+        [ disabled false; onclick (fun _ -> Message.Save_duration_entry) ]
     | _ -> [ disabled true ]
   in
   [ button ~a:args [ txt "Ajouter l'entrée" ] ]

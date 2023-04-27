@@ -99,6 +99,9 @@ module Entry = struct
         ; days : Num.t
       }
 
+  let duration ~has_contract ~has_c4 ~is_artistic ~range ~quarter ~days =
+    Duration { has_contract; has_c4; is_artistic; range; quarter; days }
+
   let to_json = function
     | Duration
         {
@@ -160,6 +163,11 @@ module Entry = struct
        let () = Js_of_ocaml.Firebug.console##error e in
        None)
     |> Util.Option.bind from_json
+
+  let days = function Duration { days; _ } -> days
+
+  let is_complete = function
+    | Duration { has_c4; has_contract; _ } -> has_c4 && has_contract
 end
 
 module Stored_case = struct
@@ -230,8 +238,38 @@ module Stored_case = struct
     let* value = Storage.get @@ key index in
     from_string value
 
-  let is_complete _ = false
+  let total_days { entries; _ } =
+    List.fold_left
+      (fun acc -> function Entry.Duration { days; _ } -> Num.(acc + days))
+      (Num.from_int 0) entries
+
+  let total_days_by_quarter q { entries; _ } =
+    List.fold_left
+      (fun acc -> function
+        | Entry.Duration { days; quarter; _ } ->
+            if Int.equal quarter q then Num.(acc + days) else acc)
+      (Num.from_int 0) entries
+
+  let total_days_non_art q { entries; _ } =
+    List.fold_left
+      (fun acc -> function
+        | Entry.Duration { days; quarter; is_artistic; _ } ->
+            if quarter <= q && not is_artistic then Num.(acc + days) else acc)
+      (Num.from_int 0) entries
+
+  let total_days_acc q { entries; _ } =
+    List.fold_left
+      (fun acc -> function
+        | Entry.Duration { days; quarter; _ } ->
+            if quarter <= q then Num.(acc + days) else acc)
+      (Num.from_int 0) entries
+
+  let is_complete case =
+    Num.(total_days case >= Num.from_int 156)
+    && List.for_all Entry.is_complete case.entries
+
   let delete index = Storage.remove (key index)
+  let add_entry case entry = { case with entries = entry :: case.entries }
 end
 
 module Case_line = struct

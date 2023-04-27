@@ -173,6 +173,28 @@ let compute_days5 d5 range =
       Some workdays
   | _ -> d5
 
+let update_save_duration_entry case range days_5dw has_c4 has_contract
+    is_non_artistic model =
+  let res =
+    let open Util.Option in
+    let* days_5dw = days_5dw in
+    let* range = range in
+    let+ range = Result.to_option range in
+    (five_to_six days_5dw, range)
+  in
+  match res with
+  | None -> model
+  | Some (days, (s, e, quarter)) ->
+      let range = (s, e) in
+      let is_artistic = not is_non_artistic in
+      let entry =
+        Data.Entry.duration ~has_contract ~has_c4 ~is_artistic ~range ~quarter
+          ~days
+      in
+      let new_case = Data.Stored_case.add_entry case entry in
+      let () = Data.Stored_case.save new_case in
+      Opened { case = new_case }
+
 let update_enter_by_duration case s e range days_5dw has_c4 has_contract
     is_non_artistic model = function
   | Message.Fill_duration_start value ->
@@ -264,6 +286,9 @@ let update_enter_by_duration case s e range days_5dw has_c4 has_contract
         ; has_contract
         ; is_non_artistic = value
         }
+  | Message.Save_duration_entry ->
+      update_save_duration_entry case range days_5dw has_c4 has_contract
+        is_non_artistic model
   | Message.Close_case -> init ()
   | _ -> discard model
 
