@@ -182,7 +182,7 @@ let pp_error ppf err =
           "Le mois [%d] doit-être compris entre 1 (Janvier) et 12 (Décembre)" x
     | `Date_invalid x ->
         Format.asprintf
-          "La date [%s] est invaide, elle doit avoir le format \
+          "La date [%s] est invalide, elle doit avoir le format \
            [jour/mois/année]"
           x
     | _ -> "unknown")

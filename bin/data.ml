@@ -260,7 +260,7 @@ module Entry = struct
 
   let is_non_art = function
     | Duration { is_artistic; _ } -> not is_artistic
-    | Fee _ -> true
+    | Fee _ -> false
 
   let is_complete = function
     | Duration { has_c4; has_contract; _ } | Fee { has_c4; has_contract; _ } ->
