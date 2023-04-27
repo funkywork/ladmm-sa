@@ -228,3 +228,52 @@ body {
 #application .joint-doc > div {
   margin-right: 32px;
 }
+
+#application .entries > div:first-child {
+  display: flex;
+  flex-direction: row;
+  border-bottom: 1px solid #666;
+}
+
+#application .entries > div:first-child > div {
+  flex: 1;
+  font-weight: 700;
+  padding: 4px;
+  border-right: 1px solid #666;
+}
+
+#application .entries > div:first-child > div:last-child {
+  border-right: 0px solid #666;
+}
+
+#application .entries > div:nth-child(2) {
+  border-bottom: 1px solid #666;
+}
+
+#application .entries > div:last-child {
+  border-bottom: 0px solid #666;
+}
+
+#application .entries > div:nth-child(2) > div {
+  display: flex;
+  flex-direction: row;
+  border-bottom: 1px solid #666;
+}
+
+#application .entries > div:nth-child(2) > div > div {
+  flex: 1;
+  padding: 4px;
+  border-right: 1px solid #666;
+}
+
+#application .entries > div:nth-child(2) > div > div:last-child {
+  border-right: 0px solid #666;
+}
+
+#application .entries > div:nth-child(2) > div > div:nth-last-child(2) {
+  background-color: #ccea8d;
+}
+
+.disabled-label {
+  color: #999;
+}
