@@ -220,13 +220,22 @@ body {
   color: #999;
 }
 
-#application .joint-doc {
-  display: flex;
-  flex-direction: row;
+.not-art {
+  opacity: 0.5;
 }
+
+/* #application .joint-doc { */
+/*   display: flex; */
+/*   flex-direction: row; */
+/* } */
 
 #application .joint-doc > div {
   margin-right: 32px;
+}
+
+#application .joint-doc select {
+  padding: 8px;
+  margin-right: 12px;
 }
 
 #application .entries > div:first-child {
@@ -270,7 +279,7 @@ body {
   border-right: 0px solid #666;
 }
 
-#application .entries > div:nth-child(2) > div > div:nth-last-child(2) {
+#application .entries > div:nth-child(2) > div > div:nth-last-child(1) {
   background-color: #ccea8d;
 }
 
