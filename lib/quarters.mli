@@ -31,6 +31,7 @@ val init : Date.t -> t
 
 val to_representable_list : t -> (int * Date.t * Date.t) list
 val get_by_date : t -> Date.t -> (int, [> Sigs.quarters_error ]) result
+val get : t -> int -> Date.t * Date.t
 
 val get_by_range :
   t -> Date.t -> Date.t -> (int, [> Sigs.quarters_error ]) result

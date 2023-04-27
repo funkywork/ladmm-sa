@@ -194,8 +194,57 @@ let render_not_opened (ident_str, ident) (period_str, period) cases =
   ; fieldset [ legend [ txt "Dossiers existants" ]; render_cases cases ]
   ]
 
+let render_entry offset i =
+  let open Html in
+  function
+  | Data.Entry.Duration
+      { has_contract; has_c4; range = s, e; days; raw_days; id; _ } ->
+      div
+        [
+          div
+            [
+              button
+                ~a:[ onclick (fun _ -> Message.Delete_entry id) ]
+                [ txt "x" ]
+            ; txt (Format.asprintf "  %d" (offset + i + 1))
+            ]
+        ; div
+            [
+              checkbox has_contract
+                ~a:
+                  [
+                    onchange_checked (fun value ->
+                        Message.Recheck_contract (id, value))
+                  ]
+                ()
+            ]
+        ; div
+            [
+              checkbox
+                ~a:
+                  [
+                    onchange_checked (fun value ->
+                        Message.Recheck_c4 (id, value))
+                  ]
+                has_c4 ()
+            ]
+        ; div [ txt @@ Format.asprintf "%a -> %a" Date.pp s Date.pp e ]
+        ; div
+            [
+              txt
+              @@ Format.asprintf "%a jour%s" Num.pp raw_days
+                   (if Num.(days >= Num.from_int 2) then "s" else "")
+            ]
+        ; div
+            [
+              txt
+              @@ Format.asprintf "%a jour%s" Num.pp days
+                   (if Num.(days >= Num.from_int 2) then "s" else "")
+            ]
+        ]
+
 let active_template case content =
-  let quarters = case.Data.Stored_case.quarters in
+  let quarters = Data.Stored_case.group_entries case in
   let case_name = case.Data.Stored_case.name |> Ident.to_string in
   let open Html in
   [
@@ -223,18 +272,40 @@ let active_template case content =
         legend [ txt ("Dossier de " ^ case_name) ]
       ; div
           ~a:[ class_ "case-period" ]
-          (List.map
-             (fun (i, s, e) ->
-               let quarter_index = pred i in
+          (List.mapi
+             (fun i
+                  Data.Stored_case.
+                    {
+                      quarter = s, e
+                    ; total_na
+                    ; total_quarter
+                    ; total
+                    ; offset
+                    ; entries
+                    } ->
                div
                  ~a:[ class_ "quarter" ]
                  [
                    div
                      ~a:[ class_ "quarter-title" ]
                      [
-                       div [ txt (Format.asprintf "Trimestre %d" i) ]
+                       div [ txt (Format.asprintf "Trimestre %d" (succ i)) ]
                      ; div [ txt @@ Date.to_string s ]
                      ; div [ txt @@ Date.to_string e ]
+                     ]
+                 ; div
+                     ~a:[ class_ "entries" ]
+                     [
+                       div
+                         [
+                           div [ txt "N° ordre" ]
+                         ; div [ txt "Contrat joint" ]
+                         ; div [ txt "C4 joint" ]
+                         ; div [ txt "Période" ]
+                         ; div [ txt "Jours saisis" ]
+                         ; div [ txt "Jours éligibles" ]
+                         ]
+                     ; div (List.mapi (render_entry offset) entries)
                      ]
                  ; div
                      ~a:[ class_ "synthesis" ]
@@ -243,52 +314,34 @@ let active_template case content =
                          ~a:[ class_ "total" ]
                          [
                            span [ txt "trimestre:" ]
-                         ; span
-                             [
-                               txt
-                                 (Data.Stored_case.total_days_by_quarter
-                                    quarter_index case
-                                 |> Num.to_string)
-                             ]
+                         ; span [ txt (total_quarter |> Num.to_string) ]
                          ; span [ txt "/78" ]
                          ]
                      ; div
                          ~a:[ class_ "total" ]
                          [
                            span [ txt "non-artistique" ]
-                         ; span
-                             [
-                               txt
-                                 (Data.Stored_case.total_days_non_art
-                                    quarter_index case
-                                 |> Num.to_string)
-                             ]
+                         ; span [ txt (total_na |> Num.to_string) ]
                          ; span [ txt "/52" ]
                          ]
                      ; div
                          ~a:[ class_ "total" ]
                          [
                            span [ txt "général:" ]
-                         ; span
-                             [
-                               txt
-                                 (Data.Stored_case.total_days_acc quarter_index
-                                    case
-                                 |> Num.to_string)
-                             ]
+                         ; span [ txt (total |> Num.to_string) ]
                          ; span [ txt "/156" ]
                          ]
                      ]
                  ])
-             (Quarters.to_representable_list quarters))
+             quarters)
       ]
   ]
 
 let render_opened case = active_template case []
 
-let render_range_label days_5dw =
+let render_range_label case days_5dw range is_non_artistic =
   let open Html in
-  function
+  match range with
   | None -> []
   | Some (Ok (_, _, i)) ->
       let xs =
@@ -297,10 +350,40 @@ let render_range_label days_5dw =
         | Some days_5dw ->
             let days_6dw = Model.five_to_six days_5dw in
             let suff = if Num.(days_6dw >= from_int 2) then "s" else "" in
-            [
-              span [ txt @@ Format.asprintf "%a" Num.pp days_6dw ]
-            ; span [ txt (" jour" ^ suff ^ " éligible" ^ suff) ]
-            ]
+            if
+              is_non_artistic
+              && Num.(
+                   Data.Stored_case.total_days_non_art case + days_6dw
+                   >= Num.from_int 52)
+            then
+              [
+                div
+                  ~a:[ class_ "error" ]
+                  [
+                    txt
+                      "Vous ne pouvez pas dépasser 52 jours de travail \
+                       non-artistique"
+                  ]
+              ]
+            else if
+              Num.(
+                Data.Stored_case.total_days_by_quarter i case + days_6dw
+                >= Num.from_int 78)
+            then
+              [
+                div
+                  ~a:[ class_ "error" ]
+                  [
+                    txt
+                      "Vous ne pouvez pas dépasser 78 jours de travail en un \
+                       semestre"
+                  ]
+              ]
+            else
+              [
+                span [ txt @@ Format.asprintf "%a" Num.pp days_6dw ]
+              ; span [ txt (" jour" ^ suff ^ " éligible" ^ suff) ]
+              ]
       in
       [
         div
@@ -310,12 +393,22 @@ let render_range_label days_5dw =
       ]
   | Some (Error x) -> [ div ~a:[ class_ "error" ] [ txt x ] ]
 
-let render_duration_button range days_5dw =
+let render_duration_button case range days_5dw is_non_artistic =
   let open Html in
   let args =
     match (range, days_5dw) with
-    | Some (Ok _), Some _ ->
-        [ disabled false; onclick (fun _ -> Message.Save_duration_entry) ]
+    | Some (Ok (_, _, i)), Some d ->
+        let days_6dw = Model.five_to_six d in
+        if
+          (is_non_artistic
+          && Num.(
+               Data.Stored_case.total_days_non_art case + days_6dw
+               >= Num.from_int 52))
+          || Num.(
+               Data.Stored_case.total_days_by_quarter i case + days_6dw
+               >= Num.from_int 78)
+        then [ disabled true ]
+        else [ disabled false; onclick (fun _ -> Message.Save_duration_entry) ]
     | _ -> [ disabled true ]
   in
   [ button ~a:args [ txt "Ajouter l'entrée" ] ]
@@ -323,6 +416,23 @@ let render_duration_button range days_5dw =
 let render_enter_by_duration case sd ed range days_5dw has_c4 has_contract
     is_non_artistic =
   let open Html in
+  let non_art_check =
+    let total = Data.Stored_case.total_days_non_art case in
+    if Num.(total < from_int 52) then
+      [
+        checkbox
+          ~a:[ onchange_checked (fun value -> Message.Check_is_artistic value) ]
+          is_non_artistic ()
+      ; label [ txt "Prestation non-artistique" ]
+      ]
+    else
+      [
+        checkbox ~a:[ disabled true ] false ()
+      ; label
+          ~a:[ class_ "disabled-label" ]
+          [ txt "Prestation non-artistique (< 52 jours)" ]
+      ]
+  in
   active_template case
     [
       fieldset
@@ -365,7 +475,7 @@ let render_enter_by_duration case sd ed range days_5dw has_c4 has_contract
                       ; oninput (fun x -> Message.Fill_days x)
                       ; type_ "number"
                       ; value
-                          (Option.fold ~none:"" ~some:string_of_int days_5dw)
+                          (Option.fold ~none:"" ~some:string_of_float days_5dw)
                       ]
                     []
                 ]
@@ -394,20 +504,10 @@ let render_enter_by_duration case sd ed range days_5dw has_c4 has_contract
                         has_c4 ()
                     ; label [ txt "C4" ]
                     ]
-                ; div
-                    [
-                      checkbox
-                        ~a:
-                          [
-                            onchange_checked (fun value ->
-                                Message.Check_is_artistic value)
-                          ]
-                        is_non_artistic ()
-                    ; label [ txt "Prestation non-artistique" ]
-                    ]
+                ; div non_art_check
                 ]
-            ; div (render_range_label days_5dw range)
-            ; div (render_duration_button range days_5dw)
+            ; div (render_range_label case days_5dw range is_non_artistic)
+            ; div (render_duration_button case range days_5dw is_non_artistic)
             ]
         ]
     ]

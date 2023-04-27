@@ -33,4 +33,7 @@ type t =
   | Check_c4 of bool
   | Check_is_artistic of bool
   | Save_duration_entry
+  | Recheck_c4 of string * bool
+  | Recheck_contract of string * bool
+  | Delete_entry of string
   | Nop

@@ -21,6 +21,7 @@
 type t = (Date.t * Date.t) array
 
 let init date = Date.quarters date 8
+let get q x = Array.get q x
 
 let get_by_date quarters date =
   let rec aux i =

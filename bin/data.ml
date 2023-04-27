@@ -20,6 +20,12 @@
 
 open Ladmm_lib
 
+let uniq_id () =
+  let open Js_of_ocaml in
+  let date = new%js Js.date_now in
+  let f = date##getTime in
+  Format.asprintf "entry-%f" f
+
 module Stored_ident = struct
   type t = string list
 
@@ -91,45 +97,63 @@ end
 module Entry = struct
   type t =
     | Duration of {
-          has_contract : bool
+          id : string
+        ; has_contract : bool
         ; has_c4 : bool
         ; is_artistic : bool
         ; range : Date.t * Date.t
         ; quarter : int
         ; days : Num.t
+        ; raw_days : Num.t
       }
 
-  let duration ~has_contract ~has_c4 ~is_artistic ~range ~quarter ~days =
-    Duration { has_contract; has_c4; is_artistic; range; quarter; days }
+  let duration ~id ~has_contract ~has_c4 ~is_artistic ~range ~quarter ~days
+      ~raw_days =
+    Duration
+      { id; has_contract; has_c4; is_artistic; range; quarter; days; raw_days }
+
+  let id_of = function Duration { id; _ } -> id
+  let has_id k e = String.equal (id_of e) k
+
+  let check_contract value = function
+    | Duration k -> Duration { k with has_contract = value }
+
+  let check_c4 value = function
+    | Duration k -> Duration { k with has_c4 = value }
 
   let to_json = function
     | Duration
         {
-          has_contract
+          id
+        ; has_contract
         ; has_c4
         ; is_artistic
         ; range = start_date, end_date
         ; quarter
         ; days
+        ; raw_days
         } ->
         `Variant
           ( "duration"
           , Some
               (`Assoc
                 [
-                  ("has_contract", `Bool has_contract)
+                  ("id", `String id)
+                ; ("has_contract", `Bool has_contract)
                 ; ("has_c4", `Bool has_c4)
                 ; ("is_artistic", `Bool is_artistic)
                 ; ("start_date", `String (Date.to_string start_date))
                 ; ("end_date", `String (Date.to_string end_date))
                 ; ("quarter", `Int quarter)
                 ; ("days", `Float (Num.to_float days))
+                ; ("raw_days", `Float (Num.to_float raw_days))
                 ]) )
 
   let from_json = function
     | `Variant ("duration", Some (`Assoc assoc)) ->
         let open Util.Option in
         let open Yojson.Safe.Util in
+        let* id = List.assoc_opt "id" assoc >>= to_string_option in
         let* has_contract =
           List.assoc_opt "has_contract" assoc >>= to_bool_option
         in
@@ -149,10 +173,23 @@ module Entry = struct
         in
         let* range = Result.to_option r in
         let* quarter = List.assoc_opt "quarter" assoc >>= to_int_option in
+        let* raw_days =
+          List.assoc_opt "raw_days" assoc >>= to_float_option >|= Num.from_float
+        in
         let+ days =
           List.assoc_opt "days" assoc >>= to_float_option >|= Num.from_float
         in
-        Duration { has_contract; has_c4; is_artistic; range; quarter; days }
+        Duration
+          {
+            id
+          ; has_contract
+          ; has_c4
+          ; is_artistic
+          ; range
+          ; quarter
+          ; days
+          ; raw_days
+          }
     | _ -> None
 
   let to_string x = x |> to_json |> Yojson.Safe.to_string
@@ -165,9 +202,13 @@ module Entry = struct
     |> Util.Option.bind from_json
 
   let days = function Duration { days; _ } -> days
+  let is_non_art = function Duration { is_artistic; _ } -> not is_artistic
 
   let is_complete = function
     | Duration { has_c4; has_contract; _ } -> has_c4 && has_contract
+
+  let start_date = function Duration { range = s, _; _ } -> s
+  let quarter = function Duration { quarter; _ } -> quarter
 end
 
 module Stored_case = struct
@@ -250,11 +291,11 @@ module Stored_case = struct
             if Int.equal quarter q then Num.(acc + days) else acc)
       (Num.from_int 0) entries
 
-  let total_days_non_art q { entries; _ } =
+  let total_days_non_art { entries; _ } =
     List.fold_left
       (fun acc -> function
-        | Entry.Duration { days; quarter; is_artistic; _ } ->
-            if quarter <= q && not is_artistic then Num.(acc + days) else acc)
+        | Entry.Duration { days; is_artistic; _ } ->
+            if not is_artistic then Num.(acc + days) else acc)
       (Num.from_int 0) entries
 
   let total_days_acc q { entries; _ } =
@@ -270,6 +311,91 @@ module Stored_case = struct
 
   let delete index = Storage.remove (key index)
   let add_entry case entry = { case with entries = entry :: case.entries }
+
+  let delete_entry case id =
+    {
+      case with
+      entries =
+        List.filter
+          (fun x -> not (String.equal (Entry.id_of x) id))
+          case.entries
+    }
+
+  let check_c4 case id value =
+    {
+      case with
+      entries =
+        List.map
+          (fun entry ->
+            if Entry.has_id id entry then Entry.check_c4 value entry else entry)
+          case.entries
+    }
+
+  let check_contract case id value =
+    {
+      case with
+      entries =
+        List.map
+          (fun entry ->
+            if Entry.has_id id entry then Entry.check_contract value entry
+            else entry)
+          case.entries
+    }
+
+  type quartered = {
+      quarter : Date.t * Date.t
+    ; entries : Entry.t list
+    ; offset : int
+    ; total_na : Num.t
+    ; total_quarter : Num.t
+    ; total : Num.t
+  }
+
+  let group_entries case =
+    let list =
+      List.init 8 (fun index ->
+          let q = Quarters.get case.quarters index in
+          ( q
+          , List.filter
+              (fun entry ->
+                let entry_quarter = Entry.quarter entry in
+                Int.equal index entry_quarter)
+              case.entries
+            |> List.sort (fun a b ->
+                   Date.compare (Entry.start_date a) (Entry.start_date b)) ))
+    in
+    let _, _, _, final =
+      List.fold_left
+        (fun (i, na, full, acc) (q, entries) ->
+          let q_days, n_i =
+            List.fold_left
+              (fun (acc, i) entry -> (Num.(acc + Entry.days entry), succ i))
+              (Num.from_int 0, i)
+              entries
+          in
+          let n_days =
+            List.fold_left
+              (fun acc entry ->
+                if Entry.is_non_art entry then Num.(acc + Entry.days entry)
+                else acc)
+              na entries
+          in
+          let f_days = Num.(q_days + full) in
+          let res =
+            {
+              quarter = q
+            ; entries
+            ; offset = i
+            ; total_na = n_days
+            ; total_quarter = q_days
+            ; total = f_days
+            }
+          in
+          (n_i, n_days, f_days, res :: acc))
+        (0, Num.from_int 0, Num.from_int 0, [])
+        list
+    in
+    final |> List.rev
 end
 
 module Case_line = struct

@@ -30,7 +30,7 @@ let alert message =
   Dom_html.window##alert (Js.string message)
 
 let five_to_six days_5dw =
-  let d5 = Num.from_int days_5dw in
+  let d5 = Num.from_float days_5dw in
   let five, six = (Num.from_int 5, Num.from_int 6) in
   Num.(d5 * six / five)
 
@@ -44,7 +44,7 @@ type t =
       ; has_contract : bool
       ; has_c4 : bool
       ; is_non_artistic : bool
-      ; days_5dw : int option
+      ; days_5dw : float option
     }
   | Not_opened of {
         identifier : string * (Ident.t, Sigs.ident_error) result
@@ -170,7 +170,7 @@ let compute_days5 d5 range =
   match range with
   | Some (Ok (x, y, _)) ->
       let Workdays.{ workdays; _ } = Workdays.from_range x y in
-      Some workdays
+      Some (workdays |> Float.of_int)
   | _ -> d5
 
 let update_save_duration_entry case range days_5dw has_c4 has_contract
@@ -180,16 +180,17 @@ let update_save_duration_entry case range days_5dw has_c4 has_contract
     let* days_5dw = days_5dw in
     let* range = range in
     let+ range = Result.to_option range in
-    (five_to_six days_5dw, range)
+    (Num.from_float days_5dw, five_to_six days_5dw, range)
   in
   match res with
   | None -> model
-  | Some (days, (s, e, quarter)) ->
+  | Some (raw_days, days, (s, e, quarter)) ->
+      let id = Data.uniq_id () in
       let range = (s, e) in
       let is_artistic = not is_non_artistic in
       let entry =
-        Data.Entry.duration ~has_contract ~has_c4 ~is_artistic ~range ~quarter
-          ~days
+        Data.Entry.duration ~id ~has_contract ~has_c4 ~is_artistic ~range
+          ~quarter ~days ~raw_days
       in
       let new_case = Data.Stored_case.add_entry case entry in
       let () = Data.Stored_case.save new_case in
@@ -235,8 +236,8 @@ let update_enter_by_duration case s e range days_5dw has_c4 has_contract
         }
   | Message.Fill_days x ->
       let days_5dw =
-        match int_of_string_opt x with
-        | Some x -> if x > 0 then Some x else None
+        match float_of_string_opt x with
+        | Some x -> if x > 0.0 then Some x else None
         | None -> None
       in
       Entry_by_duration
@@ -293,20 +294,46 @@ let update_enter_by_duration case s e range days_5dw has_c4 has_contract
   | _ -> discard model
 
 let update model message =
-  match model with
-  | Opened { case } -> update_opened case model message
-  | Entry_by_duration
-      {
-        case
-      ; start_date_str
-      ; end_date_str
-      ; days_5dw
-      ; range
-      ; has_c4
-      ; has_contract
-      ; is_non_artistic
-      } ->
+  match (message, model) with
+  | Message.Recheck_c4 (key, value), Opened { case } ->
+      let new_case = Data.Stored_case.check_c4 case key value in
+      let () = Data.Stored_case.save new_case in
+      Opened { case = new_case }
+  | Message.Recheck_contract (key, value), Opened { case } ->
+      let new_case = Data.Stored_case.check_contract case key value in
+      let () = Data.Stored_case.save new_case in
+      Opened { case = new_case }
+  | Message.Recheck_c4 (key, value), Entry_by_duration ({ case; _ } as k) ->
+      let new_case = Data.Stored_case.check_c4 case key value in
+      let () = Data.Stored_case.save new_case in
+      Entry_by_duration { k with case = new_case }
+  | Message.Recheck_contract (key, value), Entry_by_duration ({ case; _ } as k)
+    ->
+      let new_case = Data.Stored_case.check_contract case key value in
+      let () = Data.Stored_case.save new_case in
+      Entry_by_duration { k with case = new_case }
+  | Message.Delete_entry key, Opened { case } ->
+      let new_case = Data.Stored_case.delete_entry case key in
+      let () = Data.Stored_case.save new_case in
+      Opened { case = new_case }
+  | Message.Delete_entry key, Entry_by_duration ({ case; _ } as k) ->
+      let new_case = Data.Stored_case.delete_entry case key in
+      let () = Data.Stored_case.save new_case in
+      Entry_by_duration { k with case = new_case }
+  | _, Opened { case } -> update_opened case model message
+  | ( _
+    , Entry_by_duration
+        {
+          case
+        ; start_date_str
+        ; end_date_str
+        ; days_5dw
+        ; range
+        ; has_c4
+        ; has_contract
+        ; is_non_artistic
+        } ) ->
       update_enter_by_duration case start_date_str end_date_str range days_5dw
         has_c4 has_contract is_non_artistic model message
-  | Not_opened { identifier; period; cases } ->
+  | _, Not_opened { identifier; period; cases } ->
       update_not_opened identifier period cases model message
