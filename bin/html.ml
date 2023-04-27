@@ -18,29 +18,22 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>. *)
 
-(** Defines a list of 8 quarters (used to calculate the different days in
-    stages). *)
+include Vdom
 
-type t
+let txt = text
+let span ?key ?a l = elt "span" ?key ?a l
+let button ?key ?a l = elt "button" ?key ?a l
+let label ?key ?a l = elt "label" ?key ?a l
+let placeholder x = Property ("placeholder", String x)
+let name x = Property ("name", String x)
+let id x = Property ("id", String x)
+let for_ x = Property ("for", String x)
+let checked = Property ("checked", String "checked")
+let fieldset ?key ?a l = elt "fieldset" ?key ?a l
+let legend ?key ?a l = elt "legend" ?key ?a l
 
-(** {1 Construction} *)
-
-val init : Date.t -> t
-
-(** {1 Util} *)
-
-val to_representable_list : t -> (int * Date.t * Date.t) list
-val get_by_date : t -> Date.t -> (int, [> Sigs.quarters_error ]) result
-
-val get_by_range :
-  t -> Date.t -> Date.t -> (int, [> Sigs.quarters_error ]) result
-
-val get_name : t -> string
-val get_interval : t -> Date.t * Date.t
-val first_date : t -> Date.t
-val compare : t -> t -> int
-
-(** {1 Error util} *)
-
-val pp_error : Format.formatter -> [> Sigs.quarters_error ] -> unit
-val equal_error : [> Sigs.quarters_error ] -> [> Sigs.quarters_error ] -> bool
+let checkbox ?key ?(a = []) is_checked () =
+  let args =
+    a @ [ type_ "checkbox" ] @ if is_checked then [ checked ] else []
+  in
+  input ~a:args ?key []

@@ -184,7 +184,8 @@ let pp_error ppf err =
         Format.asprintf
           "La date [%s] est invaide, elle doit avoir le format \
            [jour/mois/année]"
-          x)
+          x
+    | _ -> "unknown")
 
 let equal_error a b =
   match (a, b) with
@@ -308,10 +309,10 @@ let prev { year; month; day } =
   { year = new_year; month = new_month; day = new_day }
 
 let compare a b =
-  let f { year; month; day } =
-    (year * 10000) + ((month_to_int month + 1) * 100) + day
-  in
-  Int.compare (f a) (f b)
+  if Int.equal a.year b.year then
+    let m_a = month_to_int a.month and m_b = month_to_int b.month in
+    if Int.equal m_a m_b then Int.compare a.day b.day else Int.compare m_a m_b
+  else Int.compare a.year b.year
 
 let equal a b = Int.equal 0 (compare a b)
 let ( = ) = equal

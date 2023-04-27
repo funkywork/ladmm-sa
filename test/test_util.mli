@@ -24,12 +24,12 @@ open Ladmm_lib
 
 exception Invalid_date
 
-val get_date : (Date.t, _) result -> Date.t
+val get_date : (Date.t, [> Sigs.date_error ]) result -> Date.t
 val date_testable : Date.t Alcotest.testable
 val day_of_week_testable : Date.day_of_week Alcotest.testable
 
 val date_result_testable :
-  'a Alcotest.testable -> ('a, Sigs.date_error) result Alcotest.testable
+  'a Alcotest.testable -> ('a, [> Sigs.date_error ]) result Alcotest.testable
 
 val find_result_testable :
   'a Alcotest.testable -> 'a Temporal_db.find_result Alcotest.testable
@@ -46,14 +46,18 @@ val weekend : string -> Date.day_of_week -> Workdays.status
 val leave : string -> string -> Workdays.status
 
 val quarters_result_testable :
-  'a Alcotest.testable -> ('a, Sigs.quarters_error) result Alcotest.testable
+     'a Alcotest.testable
+  -> ('a, [> Sigs.quarters_error ]) result Alcotest.testable
 
 val check_quarters_by_date :
-  Quarters.t -> string -> (int, Sigs.quarters_error) result -> Alcotest.return
+     Quarters.t
+  -> string
+  -> (int, [> Sigs.quarters_error ]) result
+  -> Alcotest.return
 
 val check_quarters_by_range :
      Quarters.t
   -> string
   -> string
-  -> (int, Sigs.quarters_error) result
+  -> (int, [> Sigs.quarters_error ]) result
   -> Alcotest.return

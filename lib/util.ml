@@ -43,3 +43,14 @@ end
 let modulo x y =
   let r = x mod y in
   if r >= 0 then r else r + y
+
+let slugify ?(space = "_") =
+  String.fold_left
+    (fun acc chr ->
+      let chr = Char.lowercase_ascii chr in
+      let code = Char.code chr in
+      if (code >= 48 && code <= 57) || (code >= 97 && code <= 122) then
+        Format.asprintf "%s%c" acc chr
+      else if code = 32 || code = 45 then acc ^ space
+      else acc)
+    ""

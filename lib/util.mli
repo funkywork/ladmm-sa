@@ -43,3 +43,4 @@ module Option : sig
 end
 
 val modulo : int -> int -> int
+val slugify : ?space:string -> string -> string

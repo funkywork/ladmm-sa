@@ -20,4 +20,12 @@
 
 open Js_of_ocaml
 
-let () = Firebug.console##log (Js.string "Hello world")
+let () =
+  let open Js_browser in
+  match Document.(get_element_by_id document "application") with
+  | None -> Firebug.console##error (Js.string "Unable to find root node")
+  | Some root ->
+      let init = Model.init () and update = Model.update and view = View.view in
+      let app = Vdom.simple_app ~init ~view ~update () in
+      let () = Element.remove_all_children root in
+      Vdom_blit.run app |> Vdom_blit.dom |> Element.append_child root

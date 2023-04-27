@@ -62,8 +62,10 @@ let get_by_range_1 =
       check_quarters_by_range q "12/02/2023" "01/02/2023"
         (Error (`Range_invalid "12/02/2023 -> 01/02/2023"));
       check_quarters_by_range q "12/02/2023" "27/04/2023" (Ok 0);
+      check_quarters_by_range q "01/02/2023" "27/04/2023" (Ok 0);
       check_quarters_by_range q "12/06/2023" "22/06/2023" (Ok 1);
       check_quarters_by_range q "03/11/2024" "24/11/2024" (Ok 7);
+      check_quarters_by_range q "01/11/2024" "24/11/2024" (Ok 7);
       check_quarters_by_range q "12/02/2021" "27/04/2021"
         (Error (`No_quarter "12/02/2021 -> 27/04/2021"));
       check_quarters_by_range q "12/02/2025" "27/04/2028"

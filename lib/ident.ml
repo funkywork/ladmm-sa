@@ -18,29 +18,15 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>. *)
 
-(** Defines a list of 8 quarters (used to calculate the different days in
-    stages). *)
+type t = string
 
-type t
+let make s =
+  let s = String.trim s in
+  let len = String.length s in
+  if len >= 3 then Ok s else Error (`Too_small s)
 
-(** {1 Construction} *)
-
-val init : Date.t -> t
-
-(** {1 Util} *)
-
-val to_representable_list : t -> (int * Date.t * Date.t) list
-val get_by_date : t -> Date.t -> (int, [> Sigs.quarters_error ]) result
-
-val get_by_range :
-  t -> Date.t -> Date.t -> (int, [> Sigs.quarters_error ]) result
-
-val get_name : t -> string
-val get_interval : t -> Date.t * Date.t
-val first_date : t -> Date.t
-val compare : t -> t -> int
-
-(** {1 Error util} *)
-
-val pp_error : Format.formatter -> [> Sigs.quarters_error ] -> unit
-val equal_error : [> Sigs.quarters_error ] -> [> Sigs.quarters_error ] -> bool
+let make' x = x
+let slugify x = Util.slugify x
+let to_string x = x
+let equal = String.equal
+let pp ppf x = Format.fprintf ppf "%s" x

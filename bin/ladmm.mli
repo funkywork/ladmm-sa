@@ -18,29 +18,4 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>. *)
 
-(** Defines a list of 8 quarters (used to calculate the different days in
-    stages). *)
-
-type t
-
-(** {1 Construction} *)
-
-val init : Date.t -> t
-
-(** {1 Util} *)
-
-val to_representable_list : t -> (int * Date.t * Date.t) list
-val get_by_date : t -> Date.t -> (int, [> Sigs.quarters_error ]) result
-
-val get_by_range :
-  t -> Date.t -> Date.t -> (int, [> Sigs.quarters_error ]) result
-
-val get_name : t -> string
-val get_interval : t -> Date.t * Date.t
-val first_date : t -> Date.t
-val compare : t -> t -> int
-
-(** {1 Error util} *)
-
-val pp_error : Format.formatter -> [> Sigs.quarters_error ] -> unit
-val equal_error : [> Sigs.quarters_error ] -> [> Sigs.quarters_error ] -> bool
+(* Deliberately left empty *)

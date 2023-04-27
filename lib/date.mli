@@ -41,7 +41,7 @@ type day_of_week = Sigs.day_of_week = Mon | Tue | Wed | Thu | Fri | Sat | Sun
 (** {1 Creation} *)
 
 val make :
-  year:int -> month:month -> day:int -> (t, [> Sigs.date_make_error ]) result
+  year:int -> month:month -> day:int -> (t, [> Sigs.date_error ]) result
 
 val from_string : string -> (t, [> Sigs.date_error ]) result
 
@@ -92,5 +92,5 @@ val month_to_int : month -> int
 
 (** {1 Error util} *)
 
-val pp_error : Format.formatter -> Sigs.date_error -> unit
-val equal_error : Sigs.date_error -> Sigs.date_error -> bool
+val pp_error : Format.formatter -> [> Sigs.date_error ] -> unit
+val equal_error : [> Sigs.date_error ] -> [> Sigs.date_error ] -> bool

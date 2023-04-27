@@ -41,7 +41,7 @@ let get_by_range quarters sdate edate =
     else
       let start_date, end_date = Array.get quarters i in
       if Date.(sdate > end_date) then aux (succ i)
-      else if Date.(sdate <= start_date) then
+      else if Date.(sdate < start_date) then
         Error (`No_quarter (str_range sdate edate))
       else if Date.(sdate >= start_date && edate <= end_date) then Ok i
       else Error (`Range_overlapping (str_range sdate edate))
@@ -65,7 +65,9 @@ let pp_error ppf err =
            début"
           s
     | `Range_overlapping s ->
-        Format.asprintf "L'intervalle de date [%s] deux trimestres" s)
+        Format.asprintf
+          "L'intervalle de date [%s] superpose plusieurs trimestres" s
+    | _ -> "unknown")
 
 let equal_error a b =
   match (a, b) with
@@ -73,3 +75,19 @@ let equal_error a b =
   | `Range_overlapping a, `Range_overlapping b -> String.equal a b
   | `Range_invalid a, `Range_invalid b -> String.equal a b
   | _ -> false
+
+let get_interval quarters =
+  let len = Array.length quarters in
+  let soq = fst (Array.get quarters 0) in
+  let eoq = snd (Array.get quarters (pred len)) in
+  (soq, eoq)
+
+let get_name quarters =
+  let soq, eoq = get_interval quarters in
+  Format.asprintf "%a_%a" Date.pp soq Date.pp eoq
+
+let first_date quarters = fst (get_interval quarters)
+
+let compare a b =
+  let a = first_date a and b = first_date b in
+  Date.compare a b

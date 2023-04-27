@@ -1,5 +1,10 @@
 :root {
-  --global-background: #182625;
+  --global-background: #fff;
+  --global-font-color: #111;
+  --font-sans-serif: sans-serif;
+  --font-mono: monospace;
+  --error-font-color: #d94f04;
+  --error-background-color: #f4e2de;
 }
 
 *,
@@ -10,4 +15,216 @@
 
 body {
   background-color: var(--global-background);
+  color: var(--global-font-color);
+  font-family: var(--font-sans-serif);
+  padding: 0;
+  margin: 32px;
+  font-size: 1.2rem;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+#application {
+}
+
+#application button,
+#application input {
+  padding: 8px;
+}
+
+#application button[disabled] {
+  cursor: not-allowed;
+}
+
+#application fieldset {
+  padding: 12px;
+}
+
+#application fieldset .form div {
+  display: flex;
+  flex-direction: row;
+  margin-bottom: 4px;
+}
+
+#application fieldset .form div * {
+  flex: 1;
+}
+
+#application fieldset .form div label {
+  font-weight: 700;
+}
+
+#application .error {
+  color: var(--error-font-color);
+  padding: 8px;
+}
+
+#application .computed_period {
+  padding: 8px;
+}
+
+#application .computed_period > fieldset > div > div {
+  display: flex;
+  flex-direction: row;
+}
+
+#application .computed_period > fieldset > div > div > div {
+  padding: 4px 6px;
+  border-bottom: 4px solid #fff;
+  font-size: 80%;
+}
+
+#application .computed_period > fieldset > div > div > div:first-child {
+  background-color: #f2f2f2;
+}
+
+#application .computed_period:empty {
+  display: none;
+}
+
+#application .error:empty {
+  visibility: hidden;
+}
+
+#application .cases > div {
+  padding: 4px;
+  display: flex;
+  flex-direction: row;
+}
+
+#application .cases > div.completed {
+  color: #777;
+  text-decoration: line-through;
+}
+
+#application .cases > div:nth-child(odd) {
+  background-color: #f2f2f2;
+}
+
+#application .cases > div > .artist-name {
+  margin-left: 32px;
+  font-weight: 700;
+  flex: 1;
+}
+
+#application .cases > div > .artist-name::before {
+  content: "Dossier de ";
+  font-weight: 400;
+}
+
+#application .cases > div > .case-interval {
+  margin-left: 12px;
+}
+
+#application .cases > div > .case-interval > span {
+  display: inline-block;
+}
+
+#application .cases > div > .case-interval > span:first-child {
+  margin-right: 6px;
+}
+
+#application .computed_period > fieldset > div > div > div:nth-child(2)::before,
+#application fieldset.case .quarter-title > div:nth-child(2)::before,
+#application .cases > div > .case-interval > span:first-child::before {
+  color: #999;
+  content: "Du ";
+}
+
+#application .computed_period > fieldset > div > div > div:nth-child(3)::before,
+#application fieldset.case .quarter-title > div:nth-child(3)::before,
+#application .cases > div > .case-interval > span:last-child::before {
+  color: #999;
+  content: "au ";
+}
+
+#application .combo-date > * {
+  display: inline-block;
+  margin: 4px;
+}
+
+#application .command-open {
+  display: flex;
+  flex-direction: row;
+  margin-bottom: 32px;
+}
+
+#application .command-open > div:first-child {
+  flex: 1;
+}
+
+#application fieldset.case {
+  font-size: 90%;
+  margin-top: 32px;
+}
+
+#application fieldset.case > legend {
+  font-weight: 700;
+}
+
+#application .quarter {
+  margin-bottom: 24px;
+  border: 1px solid #666;
+}
+
+#application fieldset.case .synthesis,
+#application fieldset.case .quarter-title {
+  display: flex;
+  flex-direction: row;
+  font-weight: 700;
+  background-color: #f2f2f2;
+  padding: 8px;
+}
+
+#application fieldset.case .quarter-title {
+  border-bottom: 1px solid #666;
+}
+
+#application fieldset.case .synthesis {
+  border-top: 1px solid #666;
+}
+
+#application fieldset.case .synthesis > div,
+#application fieldset.case .quarter-title > div {
+  flex: 1;
+}
+
+#application fieldset.case .total > span {
+  font-weight: 400;
+}
+
+#application fieldset.case .total > span:first-child {
+  padding-right: 12px;
+  font-weight: 700;
+}
+
+#application .storeable-days {
+  margin: 12px 0;
+  border-top: 1px solid #111;
+  padding: 8px 0;
+}
+
+#application .storeable-days > span {
+  padding: 8px;
+}
+
+#application .storeable-days > span:first-child {
+  background-color: #f2f2f2;
+}
+
+#application .storeable-days > span:nth-child(2) {
+  font-weight: 700;
+}
+
+#application .storeable-days > span:nth-child(3) {
+  color: #999;
+}
+
+#application .joint-doc {
+  display: flex;
+  flex-direction: row;
+}
+
+#application .joint-doc > div {
+  margin-right: 32px;
 }
