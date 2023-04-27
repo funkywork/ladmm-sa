@@ -18,28 +18,4 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>. *)
 
-type t =
-  | Not_open_fill_ident of string
-  | Not_open_fill_date of string
-  | Create_case
-  | Delete_case of string
-  | Open_case of string
-  | Close_case
-  | Write_by_duration
-  | Write_by_fee
-  | Fill_duration_start of string
-  | Fill_duration_end of string
-  | Fill_days of string
-  | Check_contract of bool
-  | Check_c4 of bool
-  | Check_is_artistic of bool
-  | Save_duration_entry
-  | Save_fee_entry
-  | Recheck_c4 of string * bool
-  | Recheck_contract of string * bool
-  | Delete_entry of string
-  | Fill_fee_date of string
-  | Fill_fee_amount of string
-  | Check_tva of bool
-  | Fill_secretary of string
-  | Nop
+include Map.Make (String)

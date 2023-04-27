@@ -69,3 +69,6 @@ let known_annual_leave =
         ; v Nov 11 "Armistice de 1918"
         ; v Dec 25 "Noël"
         ])
+
+let social_secretary =
+  [ ("SMART", Percent.from_float 6.50) ] |> List.to_seq |> Smap.of_seq

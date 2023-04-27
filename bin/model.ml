@@ -34,8 +34,32 @@ let five_to_six days_5dw =
   let five, six = (Num.from_int 5, Num.from_int 6) in
   Num.(d5 * six / five)
 
+type fee_result = {
+    applied_tva : Num.t
+  ; secretariat_fee : Num.t
+  ; employer_cost : Num.t
+  ; gross : Num.t
+  ; gross_gross : Num.t
+  ; ref_daily_salary : Num.t
+  ; eligible : Num.t
+  ; quarter : int
+  ; date : Date.t
+}
+
+type entry_by_fee = {
+    case : Data.Stored_case.t
+  ; date_str : string
+  ; amount_gross_gross_str : string
+  ; tva_included : bool
+  ; social_secretary : string option
+  ; has_contract : bool
+  ; has_c4 : bool
+  ; result : (fee_result, string) result option
+}
+
 type t =
   | Opened of { case : Data.Stored_case.t }
+  | Entry_by_fee of entry_by_fee
   | Entry_by_duration of {
         case : Data.Stored_case.t
       ; start_date_str : string
@@ -54,9 +78,6 @@ type t =
 
 let init () =
   let cases = Data.Case_line.get_all () in
-  let () =
-    Js_of_ocaml.(Firebug.console##log (Js.string "init", List.length cases))
-  in
   let empty = "" in
   Not_opened
     {
@@ -128,20 +149,8 @@ let update_not_opened identifier period cases model =
   | Message.Open_case index -> update_open_case index model
   | _ -> discard model
 
-let update_opened case model = function
+let update_opened _case model = function
   | Message.Close_case -> init ()
-  | Message.Write_by_duration ->
-      Entry_by_duration
-        {
-          case
-        ; start_date_str = ""
-        ; end_date_str = ""
-        ; range = None
-        ; days_5dw = None
-        ; has_c4 = false
-        ; has_contract = false
-        ; is_non_artistic = false
-        }
   | _ -> discard model
 
 let compute_range quarters a b =
@@ -293,8 +302,151 @@ let update_enter_by_duration case s e range days_5dw has_c4 has_contract
   | Message.Close_case -> init ()
   | _ -> discard model
 
+let compute_fee_result k =
+  let open Util.Result in
+  let res =
+    let* date = Date.from_string k.date_str in
+    let* qi = Quarters.get_by_date k.case.quarters date in
+    let* gross_gross =
+      match float_of_string_opt k.amount_gross_gross_str with
+      | None -> Error (`Invalid_amount k.amount_gross_gross_str)
+      | Some x ->
+          if x < 0.0 then Error (`Invalid_amount k.amount_gross_gross_str)
+          else Ok (Num.from_float x)
+    in
+    let pc_tva =
+      if k.tva_included then Percent.from_int 6 else Percent.from_int 0
+    in
+    let applied_tva = Percent.apply pc_tva gross_gross in
+    let secretariat_pc_opt =
+      let open Util.Option in
+      let* v = k.social_secretary in
+      let+ v = Smap.find_first_opt (String.equal v) Config.social_secretary in
+      snd v
+    in
+    let pc_secretariat =
+      Option.value ~default:(Percent.from_int 0) secretariat_pc_opt
+    in
+    let secretariat_fee =
+      Percent.apply pc_secretariat Num.(gross_gross - applied_tva)
+    in
+    let employer_cost =
+      Percent.(apply (from_float 36.30))
+        Num.(gross_gross - applied_tva - secretariat_fee)
+    in
+    let gross =
+      Num.(gross_gross - applied_tva - secretariat_fee - employer_cost)
+    in
+    let ref_daily_salary =
+      match Temporal_db.find_for Config.daily_reference_salary date with
+      | Found (_, x) -> x
+      | _ -> Num.from_float 73.72
+    in
+    let eligible = Num.(gross / ref_daily_salary) in
+    let num = Data.Stored_case.total_days_by_quarter qi k.case in
+    let+ () =
+      if Num.(num + eligible >= Num.from_int 78) then
+        Error (`High (num, eligible))
+      else Ok ()
+    in
+    {
+      gross_gross
+    ; applied_tva
+    ; secretariat_fee
+    ; employer_cost
+    ; gross
+    ; ref_daily_salary
+    ; eligible
+    ; quarter = qi
+    ; date
+    }
+  in
+  match res with
+  | Ok x -> Ok x
+  | Error (`Invalid_amount s) ->
+      Error (Format.asprintf "Montant [%s] invalide" s)
+  | Error (#Sigs.quarters_error as e) ->
+      Error (Format.asprintf "%a" Quarters.pp_error e)
+  | Error (#Sigs.date_error as e) ->
+      Error (Format.asprintf "%a" Date.pp_error e)
+  | Error (`High (num, el)) ->
+      Error
+        (Format.asprintf
+           "Vous ne pouvez pas dépasser 78 jours de travail en un semestre (%a \
+            + %a)"
+           Num.pp num Num.pp el)
+
+let update_fee k model = function
+  | Message.Fill_fee_date s ->
+      let r = { k with date_str = s } in
+      Entry_by_fee { r with result = Some (compute_fee_result r) }
+  | Message.Fill_fee_amount s ->
+      let r = { k with amount_gross_gross_str = s } in
+      Entry_by_fee { r with result = Some (compute_fee_result r) }
+  | Message.Check_c4 s ->
+      let r = { k with has_c4 = s } in
+      Entry_by_fee { r with result = Some (compute_fee_result r) }
+  | Message.Check_contract s ->
+      let r = { k with has_contract = s } in
+      Entry_by_fee { r with result = Some (compute_fee_result r) }
+  | Message.Check_tva s ->
+      let r = { k with tva_included = s } in
+      Entry_by_fee { r with result = Some (compute_fee_result r) }
+  | Message.Fill_secretary s ->
+      let v =
+        let open Util.Option in
+        Smap.find_first_opt (String.equal s) Config.social_secretary >|= fst
+      in
+      let r = { k with social_secretary = v } in
+      Entry_by_fee { r with result = Some (compute_fee_result r) }
+  | Message.Save_fee_entry -> (
+      match k.result with
+      | Some (Ok x) ->
+          let entry =
+            let id = Data.uniq_id () in
+            Data.Entry.fee ~id ~has_contract:k.has_contract ~has_c4:k.has_c4
+              ~quarter:x.quarter ~days:x.eligible ~gross:x.gross
+              ~gross_gross:x.gross_gross ~date:x.date
+          in
+          let new_case = Data.Stored_case.add_entry k.case entry in
+          let () = Data.Stored_case.save new_case in
+          Opened { case = new_case }
+      | _ -> model)
+  | Message.Close_case -> init ()
+  | _ -> model
+
 let update model message =
   match (message, model) with
+  | ( Message.Write_by_duration
+    , ( Opened { case }
+      | Entry_by_duration { case; _ }
+      | Entry_by_fee { case; _ } ) ) ->
+      Entry_by_duration
+        {
+          case
+        ; start_date_str = ""
+        ; end_date_str = ""
+        ; range = None
+        ; days_5dw = None
+        ; has_c4 = false
+        ; has_contract = false
+        ; is_non_artistic = false
+        }
+  | ( Message.Write_by_fee
+    , ( Opened { case }
+      | Entry_by_duration { case; _ }
+      | Entry_by_fee { case; _ } ) ) ->
+      Entry_by_fee
+        {
+          case
+        ; date_str = ""
+        ; amount_gross_gross_str = ""
+        ; tva_included = false
+        ; social_secretary = None
+        ; has_c4 = false
+        ; has_contract = false
+        ; result = None
+        }
   | Message.Recheck_c4 (key, value), Opened { case } ->
       let new_case = Data.Stored_case.check_c4 case key value in
       let () = Data.Stored_case.save new_case in
@@ -335,5 +487,6 @@ let update model message =
         } ) ->
       update_enter_by_duration case start_date_str end_date_str range days_5dw
         has_c4 has_contract is_non_artistic model message
+  | _, Entry_by_fee k -> update_fee k model message
   | _, Not_opened { identifier; period; cases } ->
       update_not_opened identifier period cases model message

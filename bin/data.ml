@@ -106,20 +106,35 @@ module Entry = struct
         ; days : Num.t
         ; raw_days : Num.t
       }
+    | Fee of {
+          id : string
+        ; has_contract : bool
+        ; has_c4 : bool
+        ; quarter : int
+        ; days : Num.t
+        ; gross : Num.t
+        ; gross_gross : Num.t
+        ; date : Date.t
+      }
 
   let duration ~id ~has_contract ~has_c4 ~is_artistic ~range ~quarter ~days
       ~raw_days =
     Duration
       { id; has_contract; has_c4; is_artistic; range; quarter; days; raw_days }
 
-  let id_of = function Duration { id; _ } -> id
+  let fee ~id ~has_contract ~has_c4 ~quarter ~days ~gross ~gross_gross ~date =
+    Fee { id; has_contract; has_c4; quarter; days; gross; gross_gross; date }
+
+  let id_of = function Duration { id; _ } | Fee { id; _ } -> id
   let has_id k e = String.equal (id_of e) k
 
   let check_contract value = function
     | Duration k -> Duration { k with has_contract = value }
+    | Fee k -> Fee { k with has_contract = value }
 
   let check_c4 value = function
     | Duration k -> Duration { k with has_c4 = value }
+    | Fee k -> Fee { k with has_c4 = value }
 
   let to_json = function
     | Duration
@@ -148,8 +163,48 @@ module Entry = struct
                 ; ("days", `Float (Num.to_float days))
                 ; ("raw_days", `Float (Num.to_float raw_days))
                 ]) )
+    | Fee { id; has_contract; has_c4; quarter; days; gross; gross_gross; date }
+      ->
+        `Variant
+          ( "fee"
+          , Some
+              (`Assoc
+                [
+                  ("id", `String id)
+                ; ("has_contract", `Bool has_contract)
+                ; ("has_c4", `Bool has_c4)
+                ; ("quarter", `Int quarter)
+                ; ("days", `Float (Num.to_float days))
+                ; ("gross", `Float (Num.to_float gross))
+                ; ("gross_gross", `Float (Num.to_float gross_gross))
+                ; ("date", `String (Date.to_string date))
+                ]) )
 
   let from_json = function
+    | `Variant ("fee", Some (`Assoc assoc)) ->
+        let open Util.Option in
+        let open Yojson.Safe.Util in
+        let* id = List.assoc_opt "id" assoc >>= to_string_option in
+        let* has_contract =
+          List.assoc_opt "has_contract" assoc >>= to_bool_option
+        in
+        let* has_c4 = List.assoc_opt "has_c4" assoc >>= to_bool_option in
+        let* date = List.assoc_opt "date" assoc >>= to_string_option in
+        let* date = Date.from_string date |> Result.to_option in
+        let* quarter = List.assoc_opt "quarter" assoc >>= to_int_option in
+        let* gross =
+          List.assoc_opt "gross" assoc >>= to_float_option >|= Num.from_float
+        in
+        let* gross_gross =
+          List.assoc_opt "gross_gross" assoc
+          >>= to_float_option
+          >|= Num.from_float
+        in
+        let+ days =
+          List.assoc_opt "days" assoc >>= to_float_option >|= Num.from_float
+        in
+        Fee
+          { id; has_c4; has_contract; date; quarter; gross; gross_gross; days }
     | `Variant ("duration", Some (`Assoc assoc)) ->
         let open Util.Option in
         let open Yojson.Safe.Util in
@@ -201,14 +256,21 @@ module Entry = struct
        None)
     |> Util.Option.bind from_json
 
-  let days = function Duration { days; _ } -> days
-  let is_non_art = function Duration { is_artistic; _ } -> not is_artistic
+  let days = function Duration { days; _ } | Fee { days; _ } -> days
+
+  let is_non_art = function
+    | Duration { is_artistic; _ } -> not is_artistic
+    | Fee _ -> true
 
   let is_complete = function
-    | Duration { has_c4; has_contract; _ } -> has_c4 && has_contract
+    | Duration { has_c4; has_contract; _ } | Fee { has_c4; has_contract; _ } ->
+        has_c4 && has_contract
 
-  let start_date = function Duration { range = s, _; _ } -> s
-  let quarter = function Duration { quarter; _ } -> quarter
+  let start_date = function
+    | Duration { range = s, _; _ } | Fee { date = s; _ } -> s
+
+  let quarter = function
+    | Duration { quarter; _ } | Fee { quarter; _ } -> quarter
 end
 
 module Stored_case = struct
@@ -281,13 +343,15 @@ module Stored_case = struct
 
   let total_days { entries; _ } =
     List.fold_left
-      (fun acc -> function Entry.Duration { days; _ } -> Num.(acc + days))
+      (fun acc -> function
+        | Entry.Duration { days; _ } | Entry.Fee { days; _ } -> Num.(acc + days))
       (Num.from_int 0) entries
 
   let total_days_by_quarter q { entries; _ } =
     List.fold_left
       (fun acc -> function
-        | Entry.Duration { days; quarter; _ } ->
+        | Entry.Duration { days; quarter; _ } | Entry.Fee { days; quarter; _ }
+          ->
             if Int.equal quarter q then Num.(acc + days) else acc)
       (Num.from_int 0) entries
 
@@ -295,13 +359,15 @@ module Stored_case = struct
     List.fold_left
       (fun acc -> function
         | Entry.Duration { days; is_artistic; _ } ->
-            if not is_artistic then Num.(acc + days) else acc)
+            if not is_artistic then Num.(acc + days) else acc
+        | _ -> acc)
       (Num.from_int 0) entries
 
   let total_days_acc q { entries; _ } =
     List.fold_left
       (fun acc -> function
-        | Entry.Duration { days; quarter; _ } ->
+        | Entry.Duration { days; quarter; _ } | Entry.Fee { days; quarter; _ }
+          ->
             if quarter <= q then Num.(acc + days) else acc)
       (Num.from_int 0) entries
 

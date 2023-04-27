@@ -37,3 +37,5 @@ val volatil_annual_leave : string Temporal_db.t
 
 val known_annual_leave : string Constant_db.t
 (** List of static holidays (which do not change from year to year). *)
+
+val social_secretary : Percent.t Smap.t

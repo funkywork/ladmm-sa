@@ -197,8 +197,8 @@ let render_not_opened (ident_str, ident) (period_str, period) cases =
 let render_entry offset i =
   let open Html in
   function
-  | Data.Entry.Duration
-      { has_contract; has_c4; range = s, e; days; raw_days; id; _ } ->
+  | Data.Entry.Fee
+      { has_contract; has_c4; date; days; id; gross; gross_gross; _ } ->
       div
         [
           div
@@ -228,7 +228,53 @@ let render_entry offset i =
                   ]
                 has_c4 ()
             ]
+        ; div [ txt @@ Format.asprintf "%a" Date.pp date ]
+        ; div [ txt @@ Format.asprintf "%a" Num.pp gross ]
+        ; div [ txt @@ Format.asprintf "%a" Num.pp gross_gross ]
+        ; div []
+        ; div
+            [
+              txt
+              @@ Format.asprintf "%a jour%s" Num.pp days
+                   (if Num.(days >= Num.from_int 2) then "s" else "")
+            ]
+        ]
+  | Data.Entry.Duration
+      { has_contract; has_c4; range = s, e; days; raw_days; id; is_artistic; _ }
+    ->
+      div
+        ~a:[ class_ (if is_artistic then "artistic" else "not-art") ]
+        [
+          div
+            [
+              button
+                ~a:[ onclick (fun _ -> Message.Delete_entry id) ]
+                [ txt "x" ]
+            ; txt (Format.asprintf "  %d" (offset + i + 1))
+            ]
+        ; div
+            [
+              checkbox has_contract
+                ~a:
+                  [
+                    onchange_checked (fun value ->
+                        Message.Recheck_contract (id, value))
+                  ]
+                ()
+            ]
+        ; div
+            [
+              checkbox
+                ~a:
+                  [
+                    onchange_checked (fun value ->
+                        Message.Recheck_c4 (id, value))
+                  ]
+                has_c4 ()
+            ]
         ; div [ txt @@ Format.asprintf "%a -> %a" Date.pp s Date.pp e ]
+        ; div []
+        ; div []
         ; div
             [
               txt
@@ -256,7 +302,9 @@ let active_template case content =
             button
               ~a:[ onclick (fun _ -> Message.Write_by_duration) ]
               [ txt "Saisir une prestation à la durée" ]
-          ; button ~a:[] [ txt "Saisir une prestation au cachet" ]
+          ; button
+              ~a:[ onclick (fun _ -> Message.Write_by_fee) ]
+              [ txt "Saisir une prestation au cachet" ]
           ]
       ; div
           [
@@ -302,6 +350,8 @@ let active_template case content =
                          ; div [ txt "Contrat joint" ]
                          ; div [ txt "C4 joint" ]
                          ; div [ txt "Période" ]
+                         ; div [ txt "Montant brut brut" ]
+                         ; div [ txt "Montant brut" ]
                          ; div [ txt "Jours saisis" ]
                          ; div [ txt "Jours éligibles" ]
                          ]
@@ -512,6 +562,127 @@ let render_enter_by_duration case sd ed range days_5dw has_c4 has_contract
         ]
     ]
 
+let render_fee_error Model.{ result; _ } =
+  let open Html in
+  match result with
+  | None -> [ button ~a:[ disabled true ] [ txt "Ajouter l'entrée" ] ]
+  | Some (Ok result) ->
+      let suff = if Num.(result.eligible > Num.from_int 1) then "s" else "" in
+      [
+        div
+          ~a:[ class_ "storeable-days" ]
+          [
+            div
+              [
+                span [ txt @@ Format.asprintf "%a" Num.pp result.eligible ]
+              ; span [ txt (" jour" ^ suff ^ " éligible" ^ suff) ]
+              ]
+          ; button
+              ~a:[ disabled false; onclick (fun _ -> Message.Save_fee_entry) ]
+              [ txt "Ajouter l'entrée" ]
+          ]
+      ]
+  | Some (Error err) ->
+      [
+        div ~a:[ class_ "error" ] [ txt err ]
+      ; button ~a:[ disabled true ] [ txt "Ajouter l'entrée" ]
+      ]
+
+let render_entry_by_fee
+    Model.(
+      {
+        case
+      ; date_str
+      ; amount_gross_gross_str
+      ; tva_included
+      ; has_contract
+      ; has_c4
+      ; social_secretary
+      ; _
+      } as k) =
+  let open Html in
+  active_template case
+    [
+      fieldset
+        [
+          legend [ txt "Saisir une prestation au cachet" ]
+        ; div ~a:[]
+            [
+              div
+                ~a:[ class_ "combo-date" ]
+                [
+                  label ~a:[ for_ "case_start" ] [ txt "Date de facturation: " ]
+                ; input
+                    ~a:
+                      [
+                        name "case_start"
+                      ; id "case_start"
+                      ; value date_str
+                      ; placeholder "dd/mm/yyyy"
+                      ; oninput (fun x -> Message.Fill_fee_date x)
+                      ]
+                    []
+                ; label ~a:[ for_ "case_amount" ] [ txt "Montant (brut brut)" ]
+                ; input
+                    ~a:
+                      [
+                        name "case_amount"
+                      ; id "case_amount"
+                      ; value amount_gross_gross_str
+                      ; placeholder "Montant brut brut"
+                      ; oninput (fun x -> Message.Fill_fee_amount x)
+                      ]
+                    []
+                ]
+            ; div
+                ~a:[ class_ "joint-doc" ]
+                [
+                  div
+                    [
+                      optional_from_map
+                        ~a:[ oninput (fun x -> Message.Fill_secretary x) ]
+                        social_secretary Config.social_secretary
+                    ; label [ txt "Secrétariat social" ]
+                    ]
+                ; div
+                    [
+                      checkbox
+                        ~a:
+                          [
+                            onchange_checked (fun value ->
+                                Message.Check_tva value)
+                          ]
+                        tva_included ()
+                    ; label [ txt "TVA appliquée au montant (brut brut)" ]
+                    ]
+                ; div
+                    [
+                      checkbox
+                        ~a:
+                          [
+                            onchange_checked (fun value ->
+                                Message.Check_contract value)
+                          ]
+                        has_contract ()
+                    ; label [ txt "Contrat de travail" ]
+                    ]
+                ; div
+                    [
+                      checkbox
+                        ~a:
+                          [
+                            onchange_checked (fun value ->
+                                Message.Check_c4 value)
+                          ]
+                        has_c4 ()
+                    ; label [ txt "C4" ]
+                    ]
+                ]
+            ]
+        ; div (render_fee_error k)
+        ]
+    ]
+
 let from_model = function
   | Model.Opened { case } -> render_opened case
   | Model.Entry_by_duration
@@ -527,6 +698,7 @@ let from_model = function
       } ->
       render_enter_by_duration case start_date_str end_date_str range days_5dw
         has_c4 has_contract is_non_artistic
+  | Model.Entry_by_fee k -> render_entry_by_fee k
   | Model.Not_opened { identifier; period; cases } ->
       render_not_opened identifier period cases
 

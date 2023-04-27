@@ -29,6 +29,7 @@ let name x = Property ("name", String x)
 let id x = Property ("id", String x)
 let for_ x = Property ("for", String x)
 let checked = Property ("checked", String "checked")
+let selected = Property ("selected", String "selected")
 let fieldset ?key ?a l = elt "fieldset" ?key ?a l
 let legend ?key ?a l = elt "legend" ?key ?a l
 
@@ -37,3 +38,24 @@ let checkbox ?key ?(a = []) is_checked () =
     a @ [ type_ "checkbox" ] @ if is_checked then [ checked ] else []
   in
   input ~a:args ?key []
+
+let select ?key ?a l = elt "select" ?key ?a l
+let option ?key ?a l = elt "option" ?key ?a l
+
+let optional ?key ?a l =
+  select ?key ?a
+    (List.map
+       (fun (key, v, is_checked) ->
+         option
+           ~a:([ value key ] @ if is_checked then [ selected ] else [])
+           [ txt v ])
+       l)
+
+let optional_from_map ?key ?a opt smap =
+  let k =
+    smap
+    |> Ladmm_lib.Smap.bindings
+    |> List.map (fun (k, _) ->
+           (k, k, Option.fold ~none:false ~some:(fun x -> String.equal x k) opt))
+  in
+  optional ?key ?a (("nop", "Aucun", Option.is_none opt) :: k)
