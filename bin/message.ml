@@ -40,6 +40,7 @@ type t =
   | Delete_entry of string
   | Fill_fee_date of string
   | Fill_fee_amount of string
+  | Fill_ref_salary of string
   | Check_tva of bool
   | Fill_secretary of string
   | Nop

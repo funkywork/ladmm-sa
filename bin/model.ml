@@ -50,6 +50,7 @@ type entry_by_fee = {
     case : Data.Stored_case.t
   ; date_str : string
   ; amount_gross_gross_str : string
+  ; daily_salary_ref_str : string
   ; tva_included : bool
   ; social_secretary : string option
   ; has_contract : bool
@@ -302,11 +303,22 @@ let update_enter_by_duration case s e range days_5dw has_c4 has_contract
   | Message.Close_case -> init ()
   | _ -> discard model
 
-let compute_fee_result k =
+let compute_fee_result ?(update_ref_salary = false) k =
   let open Util.Result in
+  let ref_s =
+    let* date = Date.from_string k.date_str in
+    let ref_daily_salary =
+      match Temporal_db.find_for Config.daily_reference_salary date with
+      | Found (_, x) -> x
+      | _ -> Num.from_float 73.72
+    in
+    if update_ref_salary then Ok ref_daily_salary
+    else Num.from_string k.daily_salary_ref_str
+  in
   let res =
     let* date = Date.from_string k.date_str in
     let* qi = Quarters.get_by_date k.case.quarters date in
+    let* ref_daily_salary = ref_s in
     let* gross_gross =
       match float_of_string_opt k.amount_gross_gross_str with
       | None -> Error (`Invalid_amount k.amount_gross_gross_str)
@@ -337,11 +349,7 @@ let compute_fee_result k =
     let gross =
       Num.(gross_gross - applied_tva - secretariat_fee - employer_cost)
     in
-    let ref_daily_salary =
-      match Temporal_db.find_for Config.daily_reference_salary date with
-      | Found (_, x) -> x
-      | _ -> Num.from_float 73.72
-    in
+
     let eligible = Num.(gross / ref_daily_salary) in
     let num = Data.Stored_case.total_days_by_quarter qi k.case in
     let+ () =
@@ -349,6 +357,7 @@ let compute_fee_result k =
         Error (`High (num, eligible))
       else Ok ()
     in
+
     {
       gross_gross
     ; applied_tva
@@ -361,44 +370,65 @@ let compute_fee_result k =
     ; date
     }
   in
-  match res with
-  | Ok x -> Ok x
-  | Error (`Invalid_amount s) ->
-      Error (Format.asprintf "Montant [%s] invalide" s)
-  | Error (#Sigs.quarters_error as e) ->
-      Error (Format.asprintf "%a" Quarters.pp_error e)
-  | Error (#Sigs.date_error as e) ->
-      Error (Format.asprintf "%a" Date.pp_error e)
-  | Error (`High (num, el)) ->
-      Error
-        (Format.asprintf
-           "Vous ne pouvez pas dépasser 78 jours de travail en un semestre (%a \
-            + %a)"
-           Num.pp num Num.pp el)
+
+  {
+    k with
+    daily_salary_ref_str =
+      (if update_ref_salary then
+         Result.fold
+           ~error:(fun _ -> k.daily_salary_ref_str)
+           ~ok:(fun ref_daily_salary ->
+             Format.asprintf "%a" Num.pp ref_daily_salary)
+           ref_s
+       else k.daily_salary_ref_str)
+  ; result =
+      Some
+        (match res with
+        | Ok x -> Ok x
+        | Error (`Invalid_amount s) ->
+            Error (Format.asprintf "Montant [%s] invalide" s)
+        | Error (#Sigs.quarters_error as e) ->
+            Error (Format.asprintf "%a" Quarters.pp_error e)
+        | Error (#Sigs.date_error as e) ->
+            Error (Format.asprintf "%a" Date.pp_error e)
+        | Error (`Num_invalid_string s) ->
+            Error
+              (Format.asprintf "Salaire journalier de référence: [%s] invalide"
+                 s)
+        | Error (`High (num, el)) ->
+            Error
+              (Format.asprintf
+                 "Vous ne pouvez pas dépasser 78 jours de travail en un \
+                  semestre (%a + %a)"
+                 Num.pp num Num.pp el))
+  }
 
 let update_fee k model = function
+  | Message.Fill_ref_salary s ->
+      let r = { k with daily_salary_ref_str = s } in
+      Entry_by_fee (compute_fee_result r)
   | Message.Fill_fee_date s ->
       let r = { k with date_str = s } in
-      Entry_by_fee { r with result = Some (compute_fee_result r) }
+      Entry_by_fee (compute_fee_result ~update_ref_salary:true r)
   | Message.Fill_fee_amount s ->
       let r = { k with amount_gross_gross_str = s } in
-      Entry_by_fee { r with result = Some (compute_fee_result r) }
+      Entry_by_fee (compute_fee_result r)
   | Message.Check_c4 s ->
       let r = { k with has_c4 = s } in
-      Entry_by_fee { r with result = Some (compute_fee_result r) }
+      Entry_by_fee (compute_fee_result r)
   | Message.Check_contract s ->
       let r = { k with has_contract = s } in
-      Entry_by_fee { r with result = Some (compute_fee_result r) }
+      Entry_by_fee (compute_fee_result r)
   | Message.Check_tva s ->
       let r = { k with tva_included = s } in
-      Entry_by_fee { r with result = Some (compute_fee_result r) }
+      Entry_by_fee (compute_fee_result r)
   | Message.Fill_secretary s ->
       let v =
         let open Util.Option in
         Smap.find_first_opt (String.equal s) Config.social_secretary >|= fst
       in
       let r = { k with social_secretary = v } in
-      Entry_by_fee { r with result = Some (compute_fee_result r) }
+      Entry_by_fee (compute_fee_result r)
   | Message.Save_fee_entry -> (
       match k.result with
       | Some (Ok x) ->
@@ -441,6 +471,7 @@ let update model message =
           case
         ; date_str = ""
         ; amount_gross_gross_str = ""
+        ; daily_salary_ref_str = ""
         ; tva_included = false
         ; social_secretary = None
         ; has_c4 = false

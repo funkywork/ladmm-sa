@@ -41,9 +41,9 @@ let find_for_2 =
   test_case
     "when there is a temporal point it should return it wrapped into a founded"
     `Quick (fun () ->
-      let given_date = date "28/12/2026" in
+      let given_date = date "28/11/2026" in
       let expected =
-        Temporal_db.Found (date "01/12/2022", Num.from_float 73.72)
+        Temporal_db.Found (date "01/12/2022", Num.from_float 75.19)
       in
       let computed =
         Temporal_db.find_for Config.daily_reference_salary given_date

@@ -25,6 +25,13 @@ let from_int64 = Int64.to_float
 let from_float x = x
 let ( ~!: ) x = from_float x
 
+let from_string x =
+  x
+  |> float_of_string_opt
+  |> Option.fold
+       ~none:(Error (`Num_invalid_string x))
+       ~some:(fun x -> Ok (from_float x))
+
 let to_float x =
   let r = Float.to_int (x *. 100.0) in
   Float.of_int r /. 100.0

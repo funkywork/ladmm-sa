@@ -202,13 +202,16 @@ let render_entry offset i =
       div
         [
           div
+            ~a:[ class_ "is-checkbox" ]
             [
               button
                 ~a:[ onclick (fun _ -> Message.Delete_entry id) ]
                 [ txt "x" ]
             ; txt (Format.asprintf "  %d" (offset + i + 1))
             ]
+        ; div ~a:[ class_ "is-checkbox" ] [ checkbox true () ]
         ; div
+            ~a:[ class_ "is-checkbox" ]
             [
               checkbox has_contract
                 ~a:
@@ -219,6 +222,7 @@ let render_entry offset i =
                 ()
             ]
         ; div
+            ~a:[ class_ "is-checkbox" ]
             [
               checkbox
                 ~a:
@@ -246,13 +250,16 @@ let render_entry offset i =
         ~a:[ class_ (if is_artistic then "artistic" else "not-art") ]
         [
           div
+            ~a:[ class_ "is-checkbox" ]
             [
               button
                 ~a:[ onclick (fun _ -> Message.Delete_entry id) ]
                 [ txt "x" ]
             ; txt (Format.asprintf "  %d" (offset + i + 1))
             ]
+        ; div ~a:[ class_ "is-checkbox" ] [ checkbox is_artistic () ]
         ; div
+            ~a:[ class_ "is-checkbox" ]
             [
               checkbox has_contract
                 ~a:
@@ -263,6 +270,7 @@ let render_entry offset i =
                 ()
             ]
         ; div
+            ~a:[ class_ "is-checkbox" ]
             [
               checkbox
                 ~a:
@@ -346,9 +354,12 @@ let active_template case content =
                      [
                        div
                          [
-                           div [ txt "N° ordre" ]
-                         ; div [ txt "Contrat joint" ]
-                         ; div [ txt "C4 joint" ]
+                           div ~a:[ class_ "is-checkbox" ] [ txt "N° ordre" ]
+                         ; div ~a:[ class_ "is-checkbox" ] [ txt "Artistique" ]
+                         ; div
+                             ~a:[ class_ "is-checkbox" ]
+                             [ txt "Contrat joint" ]
+                         ; div ~a:[ class_ "is-checkbox" ] [ txt "C4 joint" ]
                          ; div [ txt "Période" ]
                          ; div [ txt "Montant du cachet" ]
                          ; div [ txt "Montant brut" ]
@@ -622,7 +633,8 @@ let render_fee_error Model.{ result; _ } =
       ; button ~a:[ disabled true ] [ txt "Ajouter l'entrée" ]
       ]
 
-let render_salary_ref date_str =
+let render_salary_ref date_str daily_str =
+  let daily_ref = Num.from_string daily_str |> Result.to_option in
   let date_ref =
     let open Util.Option in
     let* d = Date.from_string date_str |> Result.to_option in
@@ -637,8 +649,10 @@ let render_salary_ref date_str =
       (Temporal_db.to_list Config.daily_reference_salary
       |> List.map (fun (date, num) ->
              let a =
-               if Option.equal Date.equal date_ref (Some date) then
-                 [ class_ "selected" ]
+               if
+                 Option.equal Date.equal date_ref (Some date)
+                 && Option.equal Num.equal daily_ref (Some num)
+               then [ class_ "selected" ]
                else []
              in
              div ~a
@@ -658,6 +672,7 @@ let render_entry_by_fee
       ; has_contract
       ; has_c4
       ; social_secretary
+      ; daily_salary_ref_str
       ; _
       } as k) =
   let open Html in
@@ -690,15 +705,28 @@ let render_entry_by_fee
                             []
                         ; label
                             ~a:[ for_ "case_amount" ]
-                            [ txt "Montant (brut brut)" ]
+                            [ txt "Montant du cachet" ]
                         ; input
                             ~a:
                               [
                                 name "case_amount"
                               ; id "case_amount"
                               ; value amount_gross_gross_str
-                              ; placeholder "Montant brut brut"
+                              ; placeholder "Montant du cachet"
                               ; oninput (fun x -> Message.Fill_fee_amount x)
+                              ]
+                            []
+                        ; label
+                            ~a:[ for_ "case_ref" ]
+                            [ txt "Salaire journalier de référence" ]
+                        ; input
+                            ~a:
+                              [
+                                name "case_ref"
+                              ; id "case_ref"
+                              ; value daily_salary_ref_str
+                              ; placeholder "Salaire journalier de référence"
+                              ; oninput (fun x -> Message.Fill_ref_salary x)
                               ]
                             []
                         ]
@@ -757,7 +785,7 @@ let render_entry_by_fee
                     ; div (render_fee_error k)
                     ]
                 ]
-            ; div (render_salary_ref date_str)
+            ; div (render_salary_ref date_str daily_salary_ref_str)
             ]
         ]
     ]

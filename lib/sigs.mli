@@ -51,3 +51,4 @@ type quarters_by_range_error =
 
 type quarters_error = [ quarters_by_date_error | quarters_by_range_error ]
 type ident_error = [ `Too_small of string ]
+type num_error = [ `Num_invalid_string of string ]

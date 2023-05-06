@@ -63,6 +63,19 @@ let test_to_float_2 =
       let computed = Num.(0.04 |> from_float |> to_float) in
       check (float 2.0) "should be equal" expected computed)
 
+let test_from_string_1 =
+  test_case "make a float from a string using [from_string] and [to_float]"
+    `Quick (fun () ->
+      let expected = [ 12.22; 3.14; 7.; 8.; 9.32 ] in
+      let computed =
+        [ "12.22"; "3.14"; "7"; "8.00"; "9.32" ]
+        |> List.map (fun x ->
+               match Num.from_string x with
+               | Ok x -> Num.to_float x
+               | _ -> assert false)
+      in
+      check (list @@ float 2.0) "should be equal" expected computed)
+
 let cases =
   ( "Num"
   , [
@@ -73,4 +86,5 @@ let cases =
     ; from_float_to_string_3
     ; test_to_float_1
     ; test_to_float_2
+    ; test_from_string_1
     ] )

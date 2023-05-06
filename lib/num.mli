@@ -29,6 +29,7 @@ val from_int : int -> t
 val from_int64 : int64 -> t
 val from_float : float -> t
 val ( ~!: ) : float -> t
+val from_string : string -> (t, [> Sigs.num_error ]) result
 
 (** {1 Conversion} *)
 
