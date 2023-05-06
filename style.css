@@ -295,7 +295,7 @@ body {
 }
 
 #application .entries > div:first-child > div {
-  flex: 1;
+  flex: 2;
   font-weight: 700;
   padding: 4px;
   border-right: 1px solid #666;
@@ -320,9 +320,15 @@ body {
 }
 
 #application .entries > div:nth-child(2) > div > div {
-  flex: 1;
+  flex: 2;
   padding: 4px;
   border-right: 1px solid #666;
+}
+
+#application .entries > div:nth-child(1) > div.is-checkbox,
+#application .entries > div:nth-child(2) > div > div.is-checkbox {
+  flex: 1;
+  text-align: center;
 }
 
 #application .entries > div:nth-child(2) > div > div:last-child {
