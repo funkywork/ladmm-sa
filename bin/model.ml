@@ -170,11 +170,9 @@ let compute_range quarters a b =
       Error (Format.asprintf "%a" Quarters.pp_error e)
   | Ok x -> Ok x
 
-let other_value flag result d =
-  let f = if flag then Date.prev else Date.next in
+let other_value result d =
   match result with
-  | Ok x ->
-      if String.equal "" (String.trim d) then x |> f |> Date.to_string else d
+  | Ok x -> if String.equal "" (String.trim d) then x |> Date.to_string else d
   | _ -> d
 
 let compute_days5 d5 range =
@@ -210,7 +208,7 @@ let update_save_duration_entry case range days_5dw has_c4 has_contract
 let update_enter_by_duration case s e range days_5dw days_5dw_str has_c4
     has_contract is_non_artistic model = function
   | Message.Fill_duration_start value ->
-      let end_date_str = other_value false (Date.from_string value) e in
+      let end_date_str = other_value (Date.from_string value) e in
       let range =
         compute_range case.Data.Stored_case.quarters value end_date_str
         |> Option.some
@@ -230,7 +228,7 @@ let update_enter_by_duration case s e range days_5dw days_5dw_str has_c4
         ; is_non_artistic
         }
   | Message.Fill_duration_end value ->
-      let start_date_str = other_value true (Date.from_string value) s in
+      let start_date_str = other_value (Date.from_string value) s in
       let range =
         compute_range case.Data.Stored_case.quarters start_date_str value
         |> Option.some
@@ -445,6 +443,7 @@ let update_fee k model = function
             Data.Entry.fee ~id ~has_contract:k.has_contract ~has_c4:k.has_c4
               ~quarter:x.quarter ~days:x.eligible ~gross:x.gross
               ~gross_gross:x.gross_gross ~date:x.date
+              ~ref_daily_salary:x.ref_daily_salary
           in
           let new_case = Data.Stored_case.add_entry k.case entry in
           let () = Data.Stored_case.save new_case in

@@ -198,7 +198,17 @@ let render_entry offset i =
   let open Html in
   function
   | Data.Entry.Fee
-      { has_contract; has_c4; date; days; id; gross; gross_gross; _ } ->
+      {
+        has_contract
+      ; has_c4
+      ; date
+      ; days
+      ; id
+      ; gross
+      ; gross_gross
+      ; ref_daily_salary
+      ; _
+      } ->
       div
         [
           div
@@ -235,6 +245,7 @@ let render_entry offset i =
         ; div [ txt @@ Format.asprintf "%a" Date.pp date ]
         ; div [ txt @@ Format.asprintf "%a" Num.pp gross ]
         ; div [ txt @@ Format.asprintf "%a" Num.pp gross_gross ]
+        ; div [ txt @@ Format.asprintf "%a" Num.pp ref_daily_salary ]
         ; div []
         ; div
             [
@@ -281,6 +292,7 @@ let render_entry offset i =
                 has_c4 ()
             ]
         ; div [ txt @@ Format.asprintf "%a -> %a" Date.pp s Date.pp e ]
+        ; div []
         ; div []
         ; div []
         ; div
@@ -363,6 +375,7 @@ let active_template case content =
                          ; div [ txt "Période" ]
                          ; div [ txt "Montant du cachet" ]
                          ; div [ txt "Montant brut" ]
+                         ; div [ txt "Salaire journalier" ]
                          ; div [ txt "Jours saisis" ]
                          ; div [ txt "Jours éligibles" ]
                          ]

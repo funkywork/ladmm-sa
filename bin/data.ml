@@ -115,6 +115,7 @@ module Entry = struct
         ; gross : Num.t
         ; gross_gross : Num.t
         ; date : Date.t
+        ; ref_daily_salary : Num.t
       }
 
   let duration ~id ~has_contract ~has_c4 ~is_artistic ~range ~quarter ~days
@@ -122,8 +123,20 @@ module Entry = struct
     Duration
       { id; has_contract; has_c4; is_artistic; range; quarter; days; raw_days }
 
-  let fee ~id ~has_contract ~has_c4 ~quarter ~days ~gross ~gross_gross ~date =
-    Fee { id; has_contract; has_c4; quarter; days; gross; gross_gross; date }
+  let fee ~id ~has_contract ~has_c4 ~quarter ~days ~gross ~gross_gross ~date
+      ~ref_daily_salary =
+    Fee
+      {
+        id
+      ; has_contract
+      ; has_c4
+      ; quarter
+      ; days
+      ; gross
+      ; gross_gross
+      ; date
+      ; ref_daily_salary
+      }
 
   let id_of = function Duration { id; _ } | Fee { id; _ } -> id
   let has_id k e = String.equal (id_of e) k
@@ -163,8 +176,18 @@ module Entry = struct
                 ; ("days", `Float (Num.to_float days))
                 ; ("raw_days", `Float (Num.to_float raw_days))
                 ]) )
-    | Fee { id; has_contract; has_c4; quarter; days; gross; gross_gross; date }
-      ->
+    | Fee
+        {
+          id
+        ; has_contract
+        ; has_c4
+        ; quarter
+        ; days
+        ; gross
+        ; gross_gross
+        ; date
+        ; ref_daily_salary
+        } ->
         `Variant
           ( "fee"
           , Some
@@ -178,6 +201,7 @@ module Entry = struct
                 ; ("gross", `Float (Num.to_float gross))
                 ; ("gross_gross", `Float (Num.to_float gross_gross))
                 ; ("date", `String (Date.to_string date))
+                ; ("ref_daily_salary", `Float (Num.to_float ref_daily_salary))
                 ]) )
 
   let from_json = function
@@ -200,11 +224,26 @@ module Entry = struct
           >>= to_float_option
           >|= Num.from_float
         in
+        let* ref_daily_salary =
+          List.assoc_opt "ref_daily_salary" assoc
+          >>= to_float_option
+          >|= Num.from_float
+        in
         let+ days =
           List.assoc_opt "days" assoc >>= to_float_option >|= Num.from_float
         in
         Fee
-          { id; has_c4; has_contract; date; quarter; gross; gross_gross; days }
+          {
+            id
+          ; has_c4
+          ; has_contract
+          ; date
+          ; quarter
+          ; gross
+          ; gross_gross
+          ; days
+          ; ref_daily_salary
+          }
     | `Variant ("duration", Some (`Assoc assoc)) ->
         let open Util.Option in
         let open Yojson.Safe.Util in
@@ -231,6 +270,7 @@ module Entry = struct
         let* raw_days =
           List.assoc_opt "raw_days" assoc >>= to_float_option >|= Num.from_float
         in
+
         let+ days =
           List.assoc_opt "days" assoc >>= to_float_option >|= Num.from_float
         in
