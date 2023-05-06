@@ -223,7 +223,8 @@ let update_enter_by_duration case s e range days_5dw days_5dw_str has_c4
         ; end_date_str
         ; range
         ; days_5dw
-        ; days_5dw_str
+        ; days_5dw_str =
+            Option.fold ~none:days_5dw_str ~some:string_of_float days_5dw
         ; has_c4
         ; has_contract
         ; is_non_artistic
