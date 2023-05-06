@@ -474,8 +474,8 @@ let render_duration_button case range days_5dw is_non_artistic =
   in
   [ button ~a:args [ txt "Ajouter l'entrée" ] ]
 
-let render_enter_by_duration case sd ed range days_5dw has_c4 has_contract
-    is_non_artistic =
+let render_enter_by_duration case sd ed range days_5dw days_5dw_str has_c4
+    has_contract is_non_artistic =
   let open Html in
   let non_art_check =
     let total = Data.Stored_case.total_days_non_art case in
@@ -535,8 +535,7 @@ let render_enter_by_duration case sd ed range days_5dw has_c4 has_contract
                       ; placeholder "En semaine de 5 jours"
                       ; oninput (fun x -> Message.Fill_days x)
                       ; type_ "number"
-                      ; value
-                          (Option.fold ~none:"" ~some:string_of_float days_5dw)
+                      ; value days_5dw_str
                       ]
                     []
                 ]
@@ -802,9 +801,10 @@ let from_model = function
       ; has_c4
       ; has_contract
       ; is_non_artistic
+      ; days_5dw_str
       } ->
       render_enter_by_duration case start_date_str end_date_str range days_5dw
-        has_c4 has_contract is_non_artistic
+        days_5dw_str has_c4 has_contract is_non_artistic
   | Model.Entry_by_fee k -> render_entry_by_fee k
   | Model.Not_opened { identifier; period; cases } ->
       render_not_opened identifier period cases
