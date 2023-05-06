@@ -198,26 +198,76 @@ body {
   font-weight: 700;
 }
 
-#application .storeable-days {
-  margin: 12px 0;
-  border-top: 1px solid #111;
-  padding: 8px 0;
+#application .temporal-db {
+  margin-top: 32px;
 }
 
-#application .storeable-days > span {
-  padding: 8px;
+#application .temporal-db-salary {
+  border: 1px solid #111;
+  font-size: 80%;
 }
 
-#application .storeable-days > span:first-child {
+#application .temporal-db-salary > div {
+  display: flex;
+  flex-direction: row;
+  border-bottom: 1px solid #111;
+}
+
+#application .temporal-db-salary > div > div {
+  padding: 4px;
+  margin: 4px;
+}
+
+#application .temporal-db-salary > div:last-child {
+  border-bottom: 0px solid #111;
+}
+
+#application .temporal-db-salary > div > div:first-child {
+  font-weight: 700;
   background-color: #f2f2f2;
 }
 
-#application .storeable-days > span:nth-child(2) {
-  font-weight: 700;
+#application .storeable-days {
+  margin: 32px 0;
+  border: 1px solid #111;
 }
 
-#application .storeable-days > span:nth-child(3) {
-  color: #999;
+#application .storeable-days > div {
+  display: flex;
+  flex-direction: row;
+  border-bottom: 1px solid #111;
+}
+
+#application .storeable-days > div:last-child {
+  border-bottom: 0px solid #111;
+}
+
+#application .storeable-days > div:first-child {
+  font-weight: 700;
+  background-color: #f2f2f2;
+}
+
+#application .storeable-days > div > div {
+  flex: 1;
+  padding: 4px;
+  border-right: 1px solid #111;
+}
+
+#application .storeable-days > div > div:last-child {
+  border-right: 0px solid #111;
+}
+
+#application .temporal-db-salary > div.selected {
+  background-color: #ccea8d;
+}
+
+#application .two-cols {
+  display: flex;
+  flex-direction: row;
+}
+
+#application .two-cols > div {
+  flex: 1;
 }
 
 .not-art {
