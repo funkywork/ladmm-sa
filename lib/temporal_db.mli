@@ -49,3 +49,5 @@ val pp_find_result :
 
 val equal_find_result :
   ('a -> 'a -> bool) -> 'a find_result -> 'a find_result -> bool
+
+val to_list : 'a t -> (Date.t * 'a) list

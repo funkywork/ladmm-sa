@@ -65,3 +65,5 @@ let pp_find_result aux ppf result =
     | Found (d, v) -> Format.asprintf "Found (%a, %a)" Date.pp d aux v
     | Out_of_bound (d, v) ->
         Format.asprintf "Out_of_bound (%a, %a)" Date.pp d aux v)
+
+let to_list tmap = Temporal_map.to_seq tmap |> List.of_seq

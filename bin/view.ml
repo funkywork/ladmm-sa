@@ -350,7 +350,7 @@ let active_template case content =
                          ; div [ txt "Contrat joint" ]
                          ; div [ txt "C4 joint" ]
                          ; div [ txt "Période" ]
-                         ; div [ txt "Montant brut brut" ]
+                         ; div [ txt "Montant du cachet" ]
                          ; div [ txt "Montant brut" ]
                          ; div [ txt "Jours saisis" ]
                          ; div [ txt "Jours éligibles" ]
@@ -572,14 +572,48 @@ let render_fee_error Model.{ result; _ } =
         div
           ~a:[ class_ "storeable-days" ]
           [
-            div
+            div ~a:[]
               [
-                span [ txt @@ Format.asprintf "%a" Num.pp result.eligible ]
-              ; span [ txt (" jour" ^ suff ^ " éligible" ^ suff) ]
+                div [ txt "Salaire journalier de référence" ]
+              ; div [ txt "TVA Appliquée" ]
+              ; div [ txt "Frais de secrétariat sociaux" ]
+              ; div [ txt "Charges patronales" ]
+              ; div [ txt "Montant brut" ]
+              ; div [ txt "Jours éligibles" ]
               ]
-          ; button
-              ~a:[ disabled false; onclick (fun _ -> Message.Save_fee_entry) ]
-              [ txt "Ajouter l'entrée" ]
+          ; div
+              [
+                div
+                  [
+                    txt @@ Format.asprintf "%a €" Num.pp result.ref_daily_salary
+                  ]
+              ; div [ txt @@ Format.asprintf "%a €" Num.pp result.applied_tva ]
+              ; div
+                  [
+                    txt @@ Format.asprintf "%a €" Num.pp result.secretariat_fee
+                  ]
+              ; div
+                  [ txt @@ Format.asprintf "%a €" Num.pp result.employer_cost ]
+              ; div [ txt @@ Format.asprintf "%a €" Num.pp result.gross ]
+              ; div
+                  [
+                    txt
+                    @@ Format.asprintf "%a jour%s" Num.pp result.eligible suff
+                  ]
+              ]
+          ; div
+              [
+                div
+                  [
+                    button
+                      ~a:
+                        [
+                          disabled false
+                        ; onclick (fun _ -> Message.Save_fee_entry)
+                        ]
+                      [ txt "Ajouter l'entrée" ]
+                  ]
+              ]
           ]
       ]
   | Some (Error err) ->
@@ -587,6 +621,32 @@ let render_fee_error Model.{ result; _ } =
         div ~a:[ class_ "error" ] [ txt err ]
       ; button ~a:[ disabled true ] [ txt "Ajouter l'entrée" ]
       ]
+
+let render_salary_ref date_str =
+  let date_ref =
+    let open Util.Option in
+    let* d = Date.from_string date_str |> Result.to_option in
+    let+ r = Temporal_db.find_maximal_after Config.daily_reference_salary d in
+    fst r
+  in
+  let open Html in
+  [
+    div ~a:[ class_ "temporal-db" ] [ txt "Salaires journaliers de références" ]
+  ; div
+      ~a:[ class_ "temporal-db-salary" ]
+      (Temporal_db.to_list Config.daily_reference_salary
+      |> List.map (fun (date, num) ->
+             let a =
+               if Option.equal Date.equal date_ref (Some date) then
+                 [ class_ "selected" ]
+               else []
+             in
+             div ~a
+               [
+                 div [ txt @@ Format.asprintf "À partir du %a" Date.pp date ]
+               ; div [ txt @@ Format.asprintf "%a €" Num.pp num ]
+               ]))
+  ]
 
 let render_entry_by_fee
     Model.(
@@ -609,77 +669,96 @@ let render_entry_by_fee
         ; div ~a:[]
             [
               div
-                ~a:[ class_ "combo-date" ]
-                [
-                  label ~a:[ for_ "case_start" ] [ txt "Date de facturation: " ]
-                ; input
-                    ~a:
-                      [
-                        name "case_start"
-                      ; id "case_start"
-                      ; value date_str
-                      ; placeholder "dd/mm/yyyy"
-                      ; oninput (fun x -> Message.Fill_fee_date x)
-                      ]
-                    []
-                ; label ~a:[ for_ "case_amount" ] [ txt "Montant (brut brut)" ]
-                ; input
-                    ~a:
-                      [
-                        name "case_amount"
-                      ; id "case_amount"
-                      ; value amount_gross_gross_str
-                      ; placeholder "Montant brut brut"
-                      ; oninput (fun x -> Message.Fill_fee_amount x)
-                      ]
-                    []
-                ]
-            ; div
-                ~a:[ class_ "joint-doc" ]
                 [
                   div
                     [
-                      optional_from_map
-                        ~a:[ oninput (fun x -> Message.Fill_secretary x) ]
-                        social_secretary Config.social_secretary
-                    ; label [ txt "Secrétariat social" ]
-                    ]
-                ; div
-                    [
-                      checkbox
-                        ~a:
-                          [
-                            onchange_checked (fun value ->
-                                Message.Check_tva value)
-                          ]
-                        tva_included ()
-                    ; label [ txt "TVA appliquée au montant (brut brut)" ]
-                    ]
-                ; div
-                    [
-                      checkbox
-                        ~a:
-                          [
-                            onchange_checked (fun value ->
-                                Message.Check_contract value)
-                          ]
-                        has_contract ()
-                    ; label [ txt "Contrat de travail" ]
-                    ]
-                ; div
-                    [
-                      checkbox
-                        ~a:
-                          [
-                            onchange_checked (fun value ->
-                                Message.Check_c4 value)
-                          ]
-                        has_c4 ()
-                    ; label [ txt "C4" ]
+                      div
+                        ~a:[ class_ "combo-date" ]
+                        [
+                          label
+                            ~a:[ for_ "case_start" ]
+                            [ txt "Date de facturation: " ]
+                        ; input
+                            ~a:
+                              [
+                                name "case_start"
+                              ; id "case_start"
+                              ; value date_str
+                              ; placeholder "dd/mm/yyyy"
+                              ; oninput (fun x -> Message.Fill_fee_date x)
+                              ]
+                            []
+                        ; label
+                            ~a:[ for_ "case_amount" ]
+                            [ txt "Montant (brut brut)" ]
+                        ; input
+                            ~a:
+                              [
+                                name "case_amount"
+                              ; id "case_amount"
+                              ; value amount_gross_gross_str
+                              ; placeholder "Montant brut brut"
+                              ; oninput (fun x -> Message.Fill_fee_amount x)
+                              ]
+                            []
+                        ]
+                    ; div
+                        [
+                          div
+                            ~a:[ class_ "joint-doc" ]
+                            [
+                              div
+                                [
+                                  optional_from_map
+                                    ~a:
+                                      [
+                                        oninput (fun x ->
+                                            Message.Fill_secretary x)
+                                      ]
+                                    social_secretary Config.social_secretary
+                                ; label [ txt "Secrétariat social" ]
+                                ]
+                            ; div
+                                [
+                                  checkbox
+                                    ~a:
+                                      [
+                                        onchange_checked (fun value ->
+                                            Message.Check_tva value)
+                                      ]
+                                    tva_included ()
+                                ; label
+                                    [ txt "TVA appliquée au montant du cachet" ]
+                                ]
+                            ; div
+                                [
+                                  checkbox
+                                    ~a:
+                                      [
+                                        onchange_checked (fun value ->
+                                            Message.Check_contract value)
+                                      ]
+                                    has_contract ()
+                                ; label [ txt "Contrat de travail" ]
+                                ]
+                            ; div
+                                [
+                                  checkbox
+                                    ~a:
+                                      [
+                                        onchange_checked (fun value ->
+                                            Message.Check_c4 value)
+                                      ]
+                                    has_c4 ()
+                                ; label [ txt "C4" ]
+                                ]
+                            ]
+                        ]
+                    ; div (render_fee_error k)
                     ]
                 ]
+            ; div (render_salary_ref date_str)
             ]
-        ; div (render_fee_error k)
         ]
     ]
 
