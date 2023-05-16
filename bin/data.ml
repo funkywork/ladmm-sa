@@ -140,6 +140,10 @@ module Entry = struct
 
   let id_of = function Duration { id; _ } | Fee { id; _ } -> id
   let has_id k e = String.equal (id_of e) k
+  let has_c4 = function Duration { has_c4; _ } | Fee { has_c4; _ } -> has_c4
+
+  let has_contract = function
+    | Duration { has_contract; _ } | Fee { has_contract; _ } -> has_contract
 
   let check_contract value = function
     | Duration k -> Duration { k with has_contract = value }

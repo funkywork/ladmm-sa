@@ -76,6 +76,7 @@ type t =
       ; period : string * (Quarters.t, Sigs.date_error) result
       ; cases : Data.Case_line.t list
     }
+  | Synthesis of { case : Data.Stored_case.t }
 
 let init () =
   let cases = Data.Case_line.get_all () in
@@ -419,10 +420,14 @@ let update_fee k model = function
 
 let update model message =
   match (message, model) with
-  | ( Message.Write_by_duration
-    , ( Opened { case }
+  | Message.Close_case, _ -> init ()
+  | ( Message.Close_pan
+    , ( Entry_by_fee { case; _ }
       | Entry_by_duration { case; _ }
-      | Entry_by_fee { case; _ } ) ) ->
+      | Synthesis { case } ) ) ->
+      Opened { case }
+  | ( Message.Write_by_duration
+    , (Opened { case } | Entry_by_fee { case; _ } | Synthesis { case }) ) ->
       Entry_by_duration
         {
           case
@@ -435,9 +440,8 @@ let update model message =
         ; is_non_artistic = false
         }
   | ( Message.Write_by_fee
-    , ( Opened { case }
-      | Entry_by_duration { case; _ }
-      | Entry_by_fee { case; _ } ) ) ->
+    , (Opened { case } | Entry_by_duration { case; _ } | Synthesis { case }) )
+    ->
       Entry_by_fee
         {
           case
@@ -450,6 +454,11 @@ let update model message =
         ; has_contract = false
         ; result = None
         }
+  | ( Message.Synthesis
+    , ( Opened { case }
+      | Entry_by_duration { case; _ }
+      | Entry_by_fee { case; _ } ) ) ->
+      Synthesis { case }
   | Message.Recheck_c4 (key, value), Opened { case } ->
       let new_case = Data.Stored_case.check_c4 case key value in
       let () = Data.Stored_case.save new_case in
@@ -467,6 +476,22 @@ let update model message =
       let new_case = Data.Stored_case.check_contract case key value in
       let () = Data.Stored_case.save new_case in
       Entry_by_duration { k with case = new_case }
+  | Message.Recheck_c4 (key, value), Synthesis { case } ->
+      let new_case = Data.Stored_case.check_c4 case key value in
+      let () = Data.Stored_case.save new_case in
+      Synthesis { case = new_case }
+  | Message.Recheck_contract (key, value), Synthesis { case } ->
+      let new_case = Data.Stored_case.check_contract case key value in
+      let () = Data.Stored_case.save new_case in
+      Synthesis { case = new_case }
+  | Message.Recheck_contract (key, value), Entry_by_fee ({ case; _ } as k) ->
+      let new_case = Data.Stored_case.check_contract case key value in
+      let () = Data.Stored_case.save new_case in
+      Entry_by_fee { k with case = new_case }
+  | Message.Recheck_c4 (key, value), Entry_by_fee ({ case; _ } as k) ->
+      let new_case = Data.Stored_case.check_c4 case key value in
+      let () = Data.Stored_case.save new_case in
+      Entry_by_fee { k with case = new_case }
   | Message.Delete_entry key, Opened { case } ->
       let new_case = Data.Stored_case.delete_entry case key in
       let () = Data.Stored_case.save new_case in
@@ -479,7 +504,12 @@ let update model message =
       let new_case = Data.Stored_case.delete_entry case key in
       let () = Data.Stored_case.save new_case in
       Entry_by_fee { k with case = new_case }
+  | Message.Delete_entry key, Synthesis { case } ->
+      let new_case = Data.Stored_case.delete_entry case key in
+      let () = Data.Stored_case.save new_case in
+      Synthesis { case = new_case }
   | _, Opened { case } -> update_opened case model message
+  | _, Synthesis _ -> model
   | ( _
     , Entry_by_duration
         {

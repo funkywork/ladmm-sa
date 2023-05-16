@@ -167,6 +167,10 @@ body {
   border: 1px solid #666;
 }
 
+#application .translucid {
+  opacity: 0.3;
+}
+
 #application fieldset.case .synthesis,
 #application fieldset.case .quarter-title {
   display: flex;
@@ -334,4 +338,29 @@ body {
 
 .disabled-label {
   color: #999;
+}
+
+.translucid {
+  padding-bottom: 0;
+}
+
+.translucid .synthesis,
+.translucid .entries {
+  display: none;
+}
+
+.missing > div:first-child {
+  background-color: #f4e2de !important;
+}
+
+.missing > div:last-child {
+  color: #ff5f5d;
+}
+
+.valid-data > div:first-child {
+  background-color: #ccea8d !important;
+}
+
+.valid-data > div:last-child {
+  color: #025259;
 }

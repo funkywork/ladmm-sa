@@ -19,6 +19,7 @@
    along with this program.  If not, see <https://www.gnu.org/licenses/>. *)
 
 type t =
+  | Close_pan
   | Not_open_fill_ident of string
   | Not_open_fill_date of string
   | Create_case
@@ -27,6 +28,7 @@ type t =
   | Close_case
   | Write_by_duration
   | Write_by_fee
+  | Synthesis
   | Fill_duration_start of string
   | Fill_duration_end of string
   | Fill_days of string

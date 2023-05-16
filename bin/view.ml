@@ -312,9 +312,14 @@ let render_entry offset i =
             ]
         ]
 
-let active_template case content =
+let active_template ?section_title ?predicate case content =
   let quarters = Data.Stored_case.group_entries case in
   let case_name = case.Data.Stored_case.name |> Ident.to_string in
+  let section_title =
+    Option.value ~default:("Dossier de " ^ case_name) section_title
+  in
+  let has_predicate = Option.is_some predicate in
+  let predicate = Option.value ~default:(fun _ -> true) predicate in
   let open Html in
   [
     div
@@ -328,10 +333,14 @@ let active_template case content =
           ; button
               ~a:[ onclick (fun _ -> Message.Write_by_fee) ]
               [ txt "Saisir une prestation au cachet" ]
+          ; button
+              ~a:[ onclick (fun _ -> Message.Synthesis) ]
+              [ txt "Synthèse" ]
           ]
       ; div
           [
-            button
+            button ~a:[ onclick (fun _ -> Message.Close_pan) ] [ txt "Accueil" ]
+          ; button
               ~a:[ onclick (fun _ -> Message.Close_case) ]
               [ txt "Fermer le dossier" ]
           ]
@@ -340,7 +349,7 @@ let active_template case content =
   ; fieldset
       ~a:[ class_ "case" ]
       [
-        legend [ txt ("Dossier de " ^ case_name) ]
+        legend [ txt section_title ]
       ; div
           ~a:[ class_ "case-period" ]
           (List.mapi
@@ -354,8 +363,11 @@ let active_template case content =
                     ; offset
                     ; entries
                     } ->
+               let entries = entries |> List.filter predicate in
+               let is_empty = match entries with [] -> true | _ -> false in
+               let kl = if is_empty then "quarter translucid" else "quarter" in
                div
-                 ~a:[ class_ "quarter" ]
+                 ~a:[ class_ kl ]
                  [
                    div
                      ~a:[ class_ "quarter-title" ]
@@ -366,55 +378,167 @@ let active_template case content =
                      ]
                  ; div
                      ~a:[ class_ "entries" ]
-                     [
-                       div
-                         [
-                           div ~a:[ class_ "is-checkbox" ] [ txt "N° ordre" ]
-                         ; div ~a:[ class_ "is-checkbox" ] [ txt "Artistique" ]
-                         ; div
-                             ~a:[ class_ "is-checkbox" ]
-                             [ txt "Contrat joint" ]
-                         ; div ~a:[ class_ "is-checkbox" ] [ txt "C4 joint" ]
-                         ; div [ txt "Période" ]
-                         ; div [ txt "Montant du cachet" ]
-                         ; div [ txt "Montant brut" ]
-                         ; div [ txt "Salaire journalier" ]
-                         ; div [ txt "Jours saisis" ]
-                         ; div [ txt "Jours éligibles" ]
-                         ]
-                     ; div (List.mapi (render_entry offset) entries)
-                     ]
+                     (if is_empty then []
+                      else
+                        [
+                          div
+                            [
+                              div ~a:[ class_ "is-checkbox" ] [ txt "N° ordre" ]
+                            ; div
+                                ~a:[ class_ "is-checkbox" ]
+                                [ txt "Artistique" ]
+                            ; div
+                                ~a:[ class_ "is-checkbox" ]
+                                [ txt "Contrat joint" ]
+                            ; div ~a:[ class_ "is-checkbox" ] [ txt "C4 joint" ]
+                            ; div [ txt "Période" ]
+                            ; div [ txt "Montant du cachet" ]
+                            ; div [ txt "Montant brut" ]
+                            ; div [ txt "Salaire journalier" ]
+                            ; div [ txt "Jours saisis" ]
+                            ; div [ txt "Jours éligibles" ]
+                            ]
+                        ; div (List.mapi (render_entry offset) entries)
+                        ])
                  ; div
                      ~a:[ class_ "synthesis" ]
-                     [
-                       div
-                         ~a:[ class_ "total" ]
-                         [
-                           span [ txt "trimestre:" ]
-                         ; span [ txt (total_quarter |> Num.to_string) ]
-                         ; span [ txt "/78" ]
-                         ]
-                     ; div
-                         ~a:[ class_ "total" ]
-                         [
-                           span [ txt "non-artistique" ]
-                         ; span [ txt (total_na |> Num.to_string) ]
-                         ; span [ txt "/52" ]
-                         ]
-                     ; div
-                         ~a:[ class_ "total" ]
-                         [
-                           span [ txt "général:" ]
-                         ; span [ txt (total |> Num.to_string) ]
-                         ; span [ txt "/156" ]
-                         ]
-                     ]
+                     (if is_empty || has_predicate then []
+                      else
+                        [
+                          div
+                            ~a:[ class_ "total" ]
+                            [
+                              span [ txt "trimestre:" ]
+                            ; span [ txt (total_quarter |> Num.to_string) ]
+                            ; span [ txt "/78" ]
+                            ]
+                        ; div
+                            ~a:[ class_ "total" ]
+                            [
+                              span [ txt "non-artistique" ]
+                            ; span [ txt (total_na |> Num.to_string) ]
+                            ; span [ txt "/52" ]
+                            ]
+                        ; div
+                            ~a:[ class_ "total" ]
+                            [
+                              span [ txt "général:" ]
+                            ; span [ txt (total |> Num.to_string) ]
+                            ; span [ txt "/156" ]
+                            ]
+                        ])
                  ])
              quarters)
       ]
   ]
 
 let render_opened case = active_template case []
+
+let render_synthesis (case : Data.Stored_case.t) =
+  let open Html in
+  let entries = case.Data.Stored_case.entries in
+  let missing_c4 =
+    List.fold_left
+      (fun acc x -> if Data.Entry.has_c4 x then acc else succ acc)
+      0 entries
+  in
+  let missing_contract =
+    List.fold_left
+      (fun acc x -> if Data.Entry.has_contract x then acc else succ acc)
+      0 entries
+  in
+  let missing_doc = missing_c4 + missing_contract in
+  let total_not_art =
+    List.fold_left
+      (fun acc x ->
+        if Data.Entry.is_non_art x then Num.(acc + Data.Entry.days x) else acc)
+      Num.(from_int 0)
+      entries
+  in
+  let total_art =
+    List.fold_left
+      (fun acc x ->
+        if not (Data.Entry.is_non_art x) then Num.(acc + Data.Entry.days x)
+        else acc)
+      Num.(from_int 0)
+      entries
+  in
+  let needed_art_days = Num.(from_int 156 - total_not_art) in
+  let total_days = Num.(total_art + total_not_art) in
+  active_template ~section_title:"Documents manquants"
+    ~predicate:(fun x -> not (Data.Entry.is_complete x))
+    case
+    [
+      div ~a:[ class_ "temporal-db" ] []
+    ; div
+        ~a:[ class_ "temporal-db-salary" ]
+        [
+          div
+            ~a:[ class_ (if missing_c4 > 0 then "missing" else "valid-data") ]
+            [
+              div ~a:[ style "flex" "1" ] [ txt "C4s manquants" ]
+            ; div ~a:[ style "flex" "3" ] [ txt @@ string_of_int missing_c4 ]
+            ]
+        ; div
+            ~a:
+              [
+                class_
+                  (if missing_contract > 0 then "missing" else "valid-data")
+              ]
+            [
+              div ~a:[ style "flex" "1" ] [ txt "Contrats manquants" ]
+            ; div
+                ~a:[ style "flex" "3" ]
+                [ txt @@ string_of_int missing_contract ]
+            ]
+        ; div
+            ~a:[ class_ (if missing_doc > 0 then "missing" else "valid-data") ]
+            [
+              div
+                ~a:[ style "flex" "1" ]
+                [ txt "Documents manquants (C4 + contrat)" ]
+            ; div ~a:[ style "flex" "3" ] [ txt @@ string_of_int missing_doc ]
+            ]
+        ; div
+            [
+              div ~a:[ style "flex" "1" ] [ txt "Prestations non-artistiques" ]
+            ; div
+                ~a:[ style "flex" "3" ]
+                [ txt @@ Num.to_string total_not_art ^ " / 52" ]
+            ]
+        ; div
+            ~a:
+              [
+                class_
+                  (if Num.(total_art > needed_art_days) then "valid-data"
+                   else "missing")
+              ]
+            [
+              div ~a:[ style "flex" "1" ] [ txt "Prestations artistiques" ]
+            ; div
+                ~a:[ style "flex" "3" ]
+                [
+                  txt
+                  @@ Num.to_string total_art
+                  ^ " / "
+                  ^ Num.to_string needed_art_days
+                ]
+            ]
+        ; div
+            ~a:
+              [
+                class_
+                  (if Num.(total_days > from_int 156) then "valid-data"
+                   else "missing")
+              ]
+            [
+              div ~a:[ style "flex" "1" ] [ txt "Nombre de jours total" ]
+            ; div
+                ~a:[ style "flex" "3" ]
+                [ txt @@ Num.to_string total_days ^ " / 156" ]
+            ]
+        ]
+    ]
 
 let render_range_label case days_5dw sd is_non_artistic =
   let open Html in
@@ -812,5 +936,6 @@ let from_model = function
   | Model.Entry_by_fee k -> render_entry_by_fee k
   | Model.Not_opened { identifier; period; cases } ->
       render_not_opened identifier period cases
+  | Model.Synthesis { case } -> render_synthesis case
 
 let view model = Html.div @@ from_model model
