@@ -19,6 +19,7 @@
    along with this program.  If not, see <https://www.gnu.org/licenses/>. *)
 
 open Ladmm_lib
+open Ladmm_js
 
 let render_ident str = function
   | Ok _ -> []
