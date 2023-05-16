@@ -147,7 +147,7 @@ let render_not_opened (ident_str, ident) (period_str, period) cases =
           [
             div
               [
-                label ~a:[ for_ "casename" ] [ txt "Nom du dossier" ]
+                label ~a:[ for_ "case_name" ] [ txt "Nom du dossier" ]
               ; input
                   ~a:
                     [
@@ -164,7 +164,7 @@ let render_not_opened (ident_str, ident) (period_str, period) cases =
               [
                 label
                   ~a:[ for_ "case_period" ]
-                  [ txt "Date de début de la saisie" ]
+                  [ txt "Date du début du premier trimestre" ]
               ; input
                   ~a:
                     [
