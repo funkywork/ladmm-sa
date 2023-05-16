@@ -219,7 +219,9 @@ let render_entry offset i =
                 [ txt "x" ]
             ; txt (Format.asprintf "  %d" (offset + i + 1))
             ]
-        ; div ~a:[ class_ "is-checkbox" ] [ checkbox true () ]
+        ; div
+            ~a:[ class_ "is-checkbox" ]
+            [ checkbox ~a:[ disabled true ] true () ]
         ; div
             ~a:[ class_ "is-checkbox" ]
             [
@@ -267,7 +269,9 @@ let render_entry offset i =
                 [ txt "x" ]
             ; txt (Format.asprintf "  %d" (offset + i + 1))
             ]
-        ; div ~a:[ class_ "is-checkbox" ] [ checkbox is_artistic () ]
+        ; div
+            ~a:[ class_ "is-checkbox" ]
+            [ checkbox ~a:[ disabled true ] is_artistic () ]
         ; div
             ~a:[ class_ "is-checkbox" ]
             [
@@ -581,7 +585,7 @@ let render_fee_error Model.{ result; _ } =
       let suff = if Num.(result.eligible > Num.from_int 1) then "s" else "" in
       [
         div
-          ~a:[ class_ "storeable-days" ]
+          ~a:[ class_ "storeable-days bordered" ]
           [
             div ~a:[]
               [
