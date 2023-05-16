@@ -475,6 +475,10 @@ let update model message =
       let new_case = Data.Stored_case.delete_entry case key in
       let () = Data.Stored_case.save new_case in
       Entry_by_duration { k with case = new_case }
+  | Message.Delete_entry key, Entry_by_fee ({ case; _ } as k) ->
+      let new_case = Data.Stored_case.delete_entry case key in
+      let () = Data.Stored_case.save new_case in
+      Entry_by_fee { k with case = new_case }
   | _, Opened { case } -> update_opened case model message
   | ( _
     , Entry_by_duration
