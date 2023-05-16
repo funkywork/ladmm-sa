@@ -391,7 +391,7 @@ let active_template ?section_title ?predicate case content =
                                 ~a:[ class_ "is-checkbox" ]
                                 [ txt "Contrat joint" ]
                             ; div ~a:[ class_ "is-checkbox" ] [ txt "C4 joint" ]
-                            ; div [ txt "Période" ]
+                            ; div [ txt "Date" ]
                             ; div [ txt "Montant du cachet" ]
                             ; div [ txt "Montant brut" ]
                             ; div [ txt "Salaire journalier" ]

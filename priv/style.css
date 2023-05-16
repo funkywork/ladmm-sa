@@ -364,3 +364,28 @@ body {
 .valid-data > div:last-child {
   color: #025259;
 }
+
+@media print {
+  button {
+    display: none;
+  }
+
+  body {
+    font-size: 0.5rem;
+  }
+
+  #application .entries > div > div,
+  #application .entries > div > div > div {
+    flex: 1;
+  }
+
+  .quarter {
+    break-inside: avoid;
+  }
+
+  fieldset.case {
+    border: 0px solid transparent;
+    margin: 0;
+    padding: 0;
+  }
+}
