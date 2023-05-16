@@ -36,4 +36,6 @@ val apply : t -> Num.t -> Num.t
 (** {1 Util} *)
 
 val pp : Format.formatter -> t -> unit
+val pp' : Format.formatter -> t -> unit
 val to_string : t -> string
+val to_string' : t -> string

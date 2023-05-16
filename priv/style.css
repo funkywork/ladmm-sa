@@ -1,3 +1,9 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 :root {
   --global-background: #fff;
   --global-font-color: #111;
@@ -5,12 +11,6 @@
   --font-mono: monospace;
   --error-font-color: #d94f04;
   --error-background-color: #f4e2de;
-}
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
 }
 
 body {
@@ -388,4 +388,66 @@ body {
     margin: 0;
     padding: 0;
   }
+}
+
+.simulators {
+  display: flex;
+  flex-flow: row wrap;
+}
+
+.simulator {
+  margin: 12px;
+  padding: 0;
+  flex: 0 0 42%;
+}
+
+.simulator > legend {
+  font-weight: 700;
+  margin: 0;
+}
+
+.simulator > div {
+  margin: 0;
+}
+
+.simulator .enum > div {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: stretch;
+  margin-top: 12px;
+}
+
+.simulator .enum > div > div {
+  flex: 1;
+  padding: 4px;
+  margin-left: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.simulator .enum > div > div:first-child {
+  background-color: #f2f2f2;
+  font-weight: 600;
+  margin-left: 0;
+}
+
+.simulator .enum > div > div:first-child > label {
+  width: 100%;
+}
+
+.simulator .enum > div > div > input {
+  width: 100%;
+}
+
+.simulator .enum > div > div:last-child {
+  font-weight: 500;
+  color: #ff0000;
+  font-size: 90%;
+}
+
+.verbatim {
+  display: inline-block;
+  margin-right: 8px;
+  font-family: monospace;
+  color: #10454f;
 }

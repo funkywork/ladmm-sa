@@ -27,10 +27,12 @@ let from_float x =
 let from_int x = from_float (Float.of_int x)
 let from_int64 x = from_float (Int64.to_float x)
 
-let pp ppf x =
+let pp' ppf x =
   let r = Num.(x * from_int 100) in
-  Format.fprintf ppf "%a%c" Num.pp r '%'
+  Format.fprintf ppf "%a" Num.pp r
 
+let pp ppf x = Format.fprintf ppf "%a%c" pp' x '%'
 let to_string x = Format.asprintf "%a" pp x
+let to_string' x = Format.asprintf "%a" pp' x
 let apply percent value = Num.mul value percent
 let ( ~%: ) x = from_float x

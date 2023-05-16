@@ -18,37 +18,15 @@
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>. *)
 
-(** A key value storage indexed by dates. *)
-
-type 'a t
-type 'a find_result = Found of Date.t * 'a | Out_of_bound of Date.t * 'a
-
-(** {1 Creation} *)
-
-val from_list : (Date.t * 'a) list -> 'a t
-
-(** {1 Find operation} *)
-
-val find : 'a t -> Date.t -> 'a option
-
-val find_minimal_after :
-  ?included:bool -> 'a t -> Date.t -> (Date.t * 'a) option
-
-val find_maximal_after :
-  ?included:bool -> 'a t -> Date.t -> (Date.t * 'a) option
-
-val find_for : ?included:bool -> 'a t -> Date.t -> 'a find_result
-val find_last : 'a t -> (Date.t * 'a) option
-
-(** {1 Util} *)
-
-val pp : (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a t -> unit
-val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
-
-val pp_find_result :
-  (Format.formatter -> 'a -> unit) -> Format.formatter -> 'a find_result -> unit
-
-val equal_find_result :
-  ('a -> 'a -> bool) -> 'a find_result -> 'a find_result -> bool
-
-val to_list : 'a t -> (Date.t * 'a) list
+type t =
+  (* Htd simulator *)
+  | Htd_fill_hours of string
+  | Htd_fill_avg of string
+  (* Nod simulator *)
+  | Nod_fill_days of string
+  | Nod_change_social of string
+  | Nod_change_social_percent of string
+  | Nod_change_date_ref of string
+  | Nod_change_salary_ref of string
+  (* garbage*)
+  | Nop

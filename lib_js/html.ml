@@ -60,3 +60,12 @@ let optional_from_map ?key ?a opt smap =
            (k, k, Option.fold ~none:false ~some:(fun x -> String.equal x k) opt))
   in
   optional ?key ?a (("nop", "Aucun", Option.is_none opt) :: k)
+
+let h1 ?key ?a l = elt "h1" ?key ?a l
+let h2 ?key ?a l = elt "h2" ?key ?a l
+let h3 ?key ?a l = elt "h3" ?key ?a l
+
+let fieldset_with ?key ?a title l =
+  fieldset ?key ?a @@ (legend [ txt title ] :: [ div l ])
+
+let p ?key ?a l = elt "p" ?key ?a l

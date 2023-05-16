@@ -67,3 +67,4 @@ let pp_find_result aux ppf result =
         Format.asprintf "Out_of_bound (%a, %a)" Date.pp d aux v)
 
 let to_list tmap = Temporal_map.to_seq tmap |> List.of_seq
+let find_last tmap = Temporal_map.find_last_opt (fun _ -> true) tmap
