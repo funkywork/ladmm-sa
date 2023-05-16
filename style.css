@@ -167,6 +167,10 @@ body {
   border: 1px solid #666;
 }
 
+#application .translucid {
+  opacity: 0.3;
+}
+
 #application fieldset.case .synthesis,
 #application fieldset.case .quarter-title {
   display: flex;
@@ -229,13 +233,11 @@ body {
 
 #application .storeable-days {
   margin: 32px 0;
-  border: 1px solid #111;
 }
 
 #application .storeable-days > div {
   display: flex;
   flex-direction: row;
-  border-bottom: 1px solid #111;
 }
 
 #application .storeable-days > div:last-child {
@@ -250,11 +252,6 @@ body {
 #application .storeable-days > div > div {
   flex: 1;
   padding: 4px;
-  border-right: 1px solid #111;
-}
-
-#application .storeable-days > div > div:last-child {
-  border-right: 0px solid #111;
 }
 
 #application .temporal-db-salary > div.selected {
@@ -341,4 +338,54 @@ body {
 
 .disabled-label {
   color: #999;
+}
+
+.translucid {
+  padding-bottom: 0;
+}
+
+.translucid .synthesis,
+.translucid .entries {
+  display: none;
+}
+
+.missing > div:first-child {
+  background-color: #f4e2de !important;
+}
+
+.missing > div:last-child {
+  color: #ff5f5d;
+}
+
+.valid-data > div:first-child {
+  background-color: #ccea8d !important;
+}
+
+.valid-data > div:last-child {
+  color: #025259;
+}
+
+@media print {
+  button {
+    display: none;
+  }
+
+  body {
+    font-size: 0.5rem;
+  }
+
+  #application .entries > div > div,
+  #application .entries > div > div > div {
+    flex: 1;
+  }
+
+  .quarter {
+    break-inside: avoid;
+  }
+
+  fieldset.case {
+    border: 0px solid transparent;
+    margin: 0;
+    padding: 0;
+  }
 }
