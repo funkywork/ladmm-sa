@@ -229,13 +229,11 @@ body {
 
 #application .storeable-days {
   margin: 32px 0;
-  border: 1px solid #111;
 }
 
 #application .storeable-days > div {
   display: flex;
   flex-direction: row;
-  border-bottom: 1px solid #111;
 }
 
 #application .storeable-days > div:last-child {
@@ -250,11 +248,6 @@ body {
 #application .storeable-days > div > div {
   flex: 1;
   padding: 4px;
-  border-right: 1px solid #111;
-}
-
-#application .storeable-days > div > div:last-child {
-  border-right: 0px solid #111;
 }
 
 #application .temporal-db-salary > div.selected {

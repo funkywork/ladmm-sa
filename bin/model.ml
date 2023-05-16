@@ -64,8 +64,7 @@ type t =
   | Entry_by_duration of {
         case : Data.Stored_case.t
       ; start_date_str : string
-      ; end_date_str : string
-      ; range : (Date.t * Date.t * int, string) result option
+      ; range : (Date.t * int, string) result option
       ; has_contract : bool
       ; has_c4 : bool
       ; is_non_artistic : bool
@@ -155,26 +154,6 @@ let update_opened _case model = function
   | Message.Close_case -> init ()
   | _ -> discard model
 
-let compute_range quarters a b =
-  let res =
-    let open Util.Result in
-    let* s = Date.from_string a in
-    let* e = Date.from_string b in
-    let+ t = Quarters.get_by_range quarters s e in
-    (s, e, t)
-  in
-  match res with
-  | Error (#Sigs.date_error as e) ->
-      Error (Format.asprintf "%a" Date.pp_error e)
-  | Error (#Sigs.quarters_error as e) ->
-      Error (Format.asprintf "%a" Quarters.pp_error e)
-  | Ok x -> Ok x
-
-let other_value result d =
-  match result with
-  | Ok x -> if String.equal "" (String.trim d) then x |> Date.to_string else d
-  | _ -> d
-
 let compute_days5 d5 range =
   match range with
   | Some (Ok (x, y, _)) ->
@@ -193,52 +172,41 @@ let update_save_duration_entry case range days_5dw has_c4 has_contract
   in
   match res with
   | None -> model
-  | Some (raw_days, days, (s, e, quarter)) ->
+  | Some (raw_days, days, (date, quarter)) ->
       let id = Data.uniq_id () in
-      let range = (s, e) in
       let is_artistic = not is_non_artistic in
       let entry =
-        Data.Entry.duration ~id ~has_contract ~has_c4 ~is_artistic ~range
+        Data.Entry.duration ~id ~has_contract ~has_c4 ~is_artistic ~date
           ~quarter ~days ~raw_days
       in
       let new_case = Data.Stored_case.add_entry case entry in
       let () = Data.Stored_case.save new_case in
       Opened { case = new_case }
 
-let update_enter_by_duration case s e range days_5dw days_5dw_str has_c4
+let compute_range quarters a =
+  let res =
+    let open Util.Result in
+    let* s = Date.from_string a in
+    let+ t = Quarters.get_by_date quarters s in
+    (s, t)
+  in
+  match res with
+  | Error (#Sigs.date_error as e) ->
+      Error (Format.asprintf "%a" Date.pp_error e)
+  | Error (#Sigs.quarters_error as e) ->
+      Error (Format.asprintf "%a" Quarters.pp_error e)
+  | Ok x -> Ok x
+
+let update_enter_by_duration case s range days_5dw days_5dw_str has_c4
     has_contract is_non_artistic model = function
   | Message.Fill_duration_start value ->
-      let end_date_str = other_value (Date.from_string value) e in
       let range =
-        compute_range case.Data.Stored_case.quarters value end_date_str
-        |> Option.some
+        compute_range case.Data.Stored_case.quarters value |> Option.some
       in
-      let days_5dw = compute_days5 days_5dw range in
       Entry_by_duration
         {
           case
         ; start_date_str = value
-        ; end_date_str
-        ; range
-        ; days_5dw
-        ; days_5dw_str =
-            Option.fold ~none:days_5dw_str ~some:string_of_float days_5dw
-        ; has_c4
-        ; has_contract
-        ; is_non_artistic
-        }
-  | Message.Fill_duration_end value ->
-      let start_date_str = other_value (Date.from_string value) s in
-      let range =
-        compute_range case.Data.Stored_case.quarters start_date_str value
-        |> Option.some
-      in
-      let days_5dw = compute_days5 days_5dw range in
-      Entry_by_duration
-        {
-          case
-        ; start_date_str
-        ; end_date_str = value
         ; range
         ; days_5dw
         ; days_5dw_str =
@@ -257,7 +225,6 @@ let update_enter_by_duration case s e range days_5dw days_5dw_str has_c4
         {
           case
         ; start_date_str = s
-        ; end_date_str = e
         ; range
         ; days_5dw
         ; days_5dw_str = x
@@ -270,7 +237,6 @@ let update_enter_by_duration case s e range days_5dw days_5dw_str has_c4
         {
           case
         ; start_date_str = s
-        ; end_date_str = e
         ; range
         ; days_5dw
         ; days_5dw_str
@@ -283,7 +249,6 @@ let update_enter_by_duration case s e range days_5dw days_5dw_str has_c4
         {
           case
         ; start_date_str = s
-        ; end_date_str = e
         ; range
         ; days_5dw
         ; has_c4 = value
@@ -296,7 +261,6 @@ let update_enter_by_duration case s e range days_5dw days_5dw_str has_c4
         {
           case
         ; start_date_str = s
-        ; end_date_str = e
         ; range
         ; days_5dw
         ; days_5dw_str
@@ -463,7 +427,6 @@ let update model message =
         {
           case
         ; start_date_str = ""
-        ; end_date_str = ""
         ; range = None
         ; days_5dw = None
         ; days_5dw_str = ""
@@ -518,7 +481,6 @@ let update model message =
         {
           case
         ; start_date_str
-        ; end_date_str
         ; days_5dw
         ; range
         ; has_c4
@@ -526,8 +488,8 @@ let update model message =
         ; is_non_artistic
         ; days_5dw_str
         } ) ->
-      update_enter_by_duration case start_date_str end_date_str range days_5dw
-        days_5dw_str has_c4 has_contract is_non_artistic model message
+      update_enter_by_duration case start_date_str range days_5dw days_5dw_str
+        has_c4 has_contract is_non_artistic model message
   | _, Entry_by_fee k -> update_fee k model message
   | _, Not_opened { identifier; period; cases } ->
       update_not_opened identifier period cases model message

@@ -28,6 +28,7 @@ let placeholder x = Property ("placeholder", String x)
 let name x = Property ("name", String x)
 let id x = Property ("id", String x)
 let for_ x = Attribute ("for", x)
+let style k v = Style (k, v)
 let checked = Property ("checked", String "checked")
 let selected = Property ("selected", String "selected")
 let fieldset ?key ?a l = elt "fieldset" ?key ?a l

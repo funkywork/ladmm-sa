@@ -255,8 +255,7 @@ let render_entry offset i =
             ]
         ]
   | Data.Entry.Duration
-      { has_contract; has_c4; range = s, e; days; raw_days; id; is_artistic; _ }
-    ->
+      { has_contract; has_c4; date = s; days; raw_days; id; is_artistic; _ } ->
       div
         ~a:[ class_ (if is_artistic then "artistic" else "not-art") ]
         [
@@ -291,7 +290,7 @@ let render_entry offset i =
                   ]
                 has_c4 ()
             ]
-        ; div [ txt @@ Format.asprintf "%a -> %a" Date.pp s Date.pp e ]
+        ; div [ txt @@ Format.asprintf "%a" Date.pp s ]
         ; div []
         ; div []
         ; div []
@@ -413,11 +412,11 @@ let active_template case content =
 
 let render_opened case = active_template case []
 
-let render_range_label case days_5dw range is_non_artistic =
+let render_range_label case days_5dw sd is_non_artistic =
   let open Html in
-  match range with
+  match sd with
   | None -> []
-  | Some (Ok (_, _, i)) ->
+  | Some (Ok (_, i)) ->
       let xs =
         match days_5dw with
         | None -> []
@@ -471,7 +470,7 @@ let render_duration_button case range days_5dw is_non_artistic =
   let open Html in
   let args =
     match (range, days_5dw) with
-    | Some (Ok (_, _, i)), Some d ->
+    | Some (Ok (_, i)), Some d ->
         let days_6dw = Model.five_to_six d in
         if
           (is_non_artistic
@@ -487,7 +486,7 @@ let render_duration_button case range days_5dw is_non_artistic =
   in
   [ button ~a:args [ txt "Ajouter l'entrée" ] ]
 
-let render_enter_by_duration case sd ed range days_5dw days_5dw_str has_c4
+let render_enter_by_duration case sd range days_5dw days_5dw_str has_c4
     has_contract is_non_artistic =
   let open Html in
   let non_art_check =
@@ -526,17 +525,6 @@ let render_enter_by_duration case sd ed range days_5dw days_5dw_str has_c4
                       ; value sd
                       ; placeholder "dd/mm/yyyy"
                       ; oninput (fun s -> Message.Fill_duration_start s)
-                      ]
-                    []
-                ; label ~a:[ for_ "case_end" ] [ txt "Fin: " ]
-                ; input
-                    ~a:
-                      [
-                        name "case_end"
-                      ; id "case_end"
-                      ; value ed
-                      ; placeholder "dd/mm/yyyy"
-                      ; oninput (fun s -> Message.Fill_duration_end s)
                       ]
                     []
                 ; label ~a:[ for_ "case_days" ] [ txt "Jours prestés (5j): " ]
@@ -808,7 +796,6 @@ let from_model = function
       {
         case
       ; start_date_str
-      ; end_date_str
       ; range
       ; days_5dw
       ; has_c4
@@ -816,8 +803,8 @@ let from_model = function
       ; is_non_artistic
       ; days_5dw_str
       } ->
-      render_enter_by_duration case start_date_str end_date_str range days_5dw
-        days_5dw_str has_c4 has_contract is_non_artistic
+      render_enter_by_duration case start_date_str range days_5dw days_5dw_str
+        has_c4 has_contract is_non_artistic
   | Model.Entry_by_fee k -> render_entry_by_fee k
   | Model.Not_opened { identifier; period; cases } ->
       render_not_opened identifier period cases

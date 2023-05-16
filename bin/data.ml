@@ -101,7 +101,7 @@ module Entry = struct
         ; has_contract : bool
         ; has_c4 : bool
         ; is_artistic : bool
-        ; range : Date.t * Date.t
+        ; date : Date.t
         ; quarter : int
         ; days : Num.t
         ; raw_days : Num.t
@@ -118,10 +118,10 @@ module Entry = struct
         ; ref_daily_salary : Num.t
       }
 
-  let duration ~id ~has_contract ~has_c4 ~is_artistic ~range ~quarter ~days
+  let duration ~id ~has_contract ~has_c4 ~is_artistic ~date ~quarter ~days
       ~raw_days =
     Duration
-      { id; has_contract; has_c4; is_artistic; range; quarter; days; raw_days }
+      { id; has_contract; has_c4; is_artistic; date; quarter; days; raw_days }
 
   let fee ~id ~has_contract ~has_c4 ~quarter ~days ~gross ~gross_gross ~date
       ~ref_daily_salary =
@@ -156,7 +156,7 @@ module Entry = struct
         ; has_contract
         ; has_c4
         ; is_artistic
-        ; range = start_date, end_date
+        ; date = start_date
         ; quarter
         ; days
         ; raw_days
@@ -171,7 +171,6 @@ module Entry = struct
                 ; ("has_c4", `Bool has_c4)
                 ; ("is_artistic", `Bool is_artistic)
                 ; ("start_date", `String (Date.to_string start_date))
-                ; ("end_date", `String (Date.to_string end_date))
                 ; ("quarter", `Int quarter)
                 ; ("days", `Float (Num.to_float days))
                 ; ("raw_days", `Float (Num.to_float raw_days))
@@ -258,14 +257,8 @@ module Entry = struct
         let* start_date =
           List.assoc_opt "start_date" assoc >>= to_string_option
         in
-        let* end_date = List.assoc_opt "end_date" assoc >>= to_string_option in
-        let r =
-          let open Util.Result in
-          let* s = Date.from_string start_date in
-          let+ e = Date.from_string end_date in
-          (s, e)
-        in
-        let* range = Result.to_option r in
+        let r = Date.from_string start_date in
+        let* date = Result.to_option r in
         let* quarter = List.assoc_opt "quarter" assoc >>= to_int_option in
         let* raw_days =
           List.assoc_opt "raw_days" assoc >>= to_float_option >|= Num.from_float
@@ -280,7 +273,7 @@ module Entry = struct
           ; has_contract
           ; has_c4
           ; is_artistic
-          ; range
+          ; date
           ; quarter
           ; days
           ; raw_days
@@ -307,7 +300,7 @@ module Entry = struct
         has_c4 && has_contract
 
   let start_date = function
-    | Duration { range = s, _; _ } | Fee { date = s; _ } -> s
+    | Duration { date = s; _ } | Fee { date = s; _ } -> s
 
   let quarter = function
     | Duration { quarter; _ } | Fee { quarter; _ } -> quarter
