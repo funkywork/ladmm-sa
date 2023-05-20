@@ -395,7 +395,7 @@ let active_template ?section_title ?predicate case content =
                             ; div [ txt "Date" ]
                             ; div [ txt "Montant du cachet" ]
                             ; div [ txt "Montant brut" ]
-                            ; div [ txt "Salaire journalier" ]
+                            ; div [ txt "Salaire journalier de référence" ]
                             ; div [ txt "Jours saisis" ]
                             ; div [ txt "Jours éligibles" ]
                             ]
