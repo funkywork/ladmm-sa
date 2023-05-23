@@ -35,11 +35,7 @@ let five_to_six days_5dw =
   Num.(d5 * six / five)
 
 type fee_result = {
-    applied_tva : Num.t
-  ; secretariat_fee : Num.t
-  ; employer_cost : Num.t
-  ; gross : Num.t
-  ; gross_gross : Num.t
+    amount : Num.t
   ; ref_daily_salary : Num.t
   ; eligible : Num.t
   ; quarter : int
@@ -49,10 +45,8 @@ type fee_result = {
 type entry_by_fee = {
     case : Data.Stored_case.t
   ; date_str : string
-  ; amount_gross_gross_str : string
+  ; amount_str : string
   ; daily_salary_ref_str : string
-  ; tva_included : bool
-  ; social_secretary : string option
   ; has_contract : bool
   ; has_c4 : bool
   ; result : (fee_result, string) result option
@@ -291,38 +285,14 @@ let compute_fee_result ?(update_ref_salary = false) k =
     let* date = Date.from_string k.date_str in
     let* qi = Quarters.get_by_date k.case.quarters date in
     let* ref_daily_salary = ref_s in
-    let* gross_gross =
-      match float_of_string_opt k.amount_gross_gross_str with
-      | None -> Error (`Invalid_amount k.amount_gross_gross_str)
+    let* amount =
+      match float_of_string_opt k.amount_str with
+      | None -> Error (`Invalid_amount k.amount_str)
       | Some x ->
-          if x < 0.0 then Error (`Invalid_amount k.amount_gross_gross_str)
+          if x < 0.0 then Error (`Invalid_amount k.amount_str)
           else Ok (Num.from_float x)
     in
-    let pc_tva =
-      if k.tva_included then Percent.from_int 6 else Percent.from_int 0
-    in
-    let applied_tva = Percent.apply pc_tva gross_gross in
-    let secretariat_pc_opt =
-      let open Util.Option in
-      let* v = k.social_secretary in
-      let+ v = Smap.find_first_opt (String.equal v) Config.social_secretary in
-      snd v
-    in
-    let pc_secretariat =
-      Option.value ~default:(Percent.from_int 0) secretariat_pc_opt
-    in
-    let secretariat_fee =
-      Percent.apply pc_secretariat Num.(gross_gross - applied_tva)
-    in
-    let employer_cost =
-      Percent.(apply (from_float 36.30))
-        Num.(gross_gross - applied_tva - secretariat_fee)
-    in
-    let gross =
-      Num.(gross_gross - applied_tva - secretariat_fee - employer_cost)
-    in
-
-    let eligible = Num.(gross / ref_daily_salary) in
+    let eligible = Num.(amount / ref_daily_salary) in
     let num = Data.Stored_case.total_days_by_quarter qi k.case in
     let+ () =
       if Num.(num + eligible >= Num.from_int 78) then
@@ -330,17 +300,7 @@ let compute_fee_result ?(update_ref_salary = false) k =
       else Ok ()
     in
 
-    {
-      gross_gross
-    ; applied_tva
-    ; secretariat_fee
-    ; employer_cost
-    ; gross
-    ; ref_daily_salary
-    ; eligible
-    ; quarter = qi
-    ; date
-    }
+    { amount; ref_daily_salary; eligible; quarter = qi; date }
   in
 
   {
@@ -383,7 +343,7 @@ let update_fee k model = function
       let r = { k with date_str = s } in
       Entry_by_fee (compute_fee_result ~update_ref_salary:true r)
   | Message.Fill_fee_amount s ->
-      let r = { k with amount_gross_gross_str = s } in
+      let r = { k with amount_str = s } in
       Entry_by_fee (compute_fee_result r)
   | Message.Check_c4 s ->
       let r = { k with has_c4 = s } in
@@ -391,24 +351,13 @@ let update_fee k model = function
   | Message.Check_contract s ->
       let r = { k with has_contract = s } in
       Entry_by_fee (compute_fee_result r)
-  | Message.Check_tva s ->
-      let r = { k with tva_included = s } in
-      Entry_by_fee (compute_fee_result r)
-  | Message.Fill_secretary s ->
-      let v =
-        let open Util.Option in
-        Smap.find_first_opt (String.equal s) Config.social_secretary >|= fst
-      in
-      let r = { k with social_secretary = v } in
-      Entry_by_fee (compute_fee_result r)
   | Message.Save_fee_entry -> (
       match k.result with
       | Some (Ok x) ->
           let entry =
             let id = Data.uniq_id () in
             Data.Entry.fee ~id ~has_contract:k.has_contract ~has_c4:k.has_c4
-              ~quarter:x.quarter ~days:x.eligible ~gross:x.gross
-              ~gross_gross:x.gross_gross ~date:x.date
+              ~quarter:x.quarter ~days:x.eligible ~amount:x.amount ~date:x.date
               ~ref_daily_salary:x.ref_daily_salary
           in
           let new_case = Data.Stored_case.add_entry k.case entry in
@@ -446,10 +395,8 @@ let update model message =
         {
           case
         ; date_str = ""
-        ; amount_gross_gross_str = ""
+        ; amount_str = ""
         ; daily_salary_ref_str = ""
-        ; tva_included = false
-        ; social_secretary = None
         ; has_c4 = false
         ; has_contract = false
         ; result = None

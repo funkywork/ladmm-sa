@@ -199,17 +199,7 @@ let render_entry offset i =
   let open Html in
   function
   | Data.Entry.Fee
-      {
-        has_contract
-      ; has_c4
-      ; date
-      ; days
-      ; id
-      ; gross
-      ; gross_gross
-      ; ref_daily_salary
-      ; _
-      } ->
+      { has_contract; has_c4; date; days; id; amount; ref_daily_salary; _ } ->
       div
         [
           div
@@ -246,8 +236,7 @@ let render_entry offset i =
                 has_c4 ()
             ]
         ; div [ txt @@ Format.asprintf "%a" Date.pp date ]
-        ; div [ txt @@ Format.asprintf "%a" Num.pp gross ]
-        ; div [ txt @@ Format.asprintf "%a" Num.pp gross_gross ]
+        ; div [ txt @@ Format.asprintf "%a" Num.pp amount ]
         ; div [ txt @@ Format.asprintf "%a" Num.pp ref_daily_salary ]
         ; div []
         ; div
@@ -394,7 +383,6 @@ let active_template ?section_title ?predicate case content =
                             ; div ~a:[ class_ "is-checkbox" ] [ txt "C4 joint" ]
                             ; div [ txt "Date" ]
                             ; div [ txt "Montant du cachet" ]
-                            ; div [ txt "Montant brut" ]
                             ; div [ txt "Salaire journalier de référence" ]
                             ; div [ txt "Jours saisis" ]
                             ; div [ txt "Jours éligibles" ]
@@ -714,27 +702,17 @@ let render_fee_error Model.{ result; _ } =
           [
             div ~a:[]
               [
-                div [ txt "Salaire journalier de référence" ]
-              ; div [ txt "TVA Appliquée" ]
-              ; div [ txt "Frais de secrétariat sociaux" ]
-              ; div [ txt "Charges patronales" ]
-              ; div [ txt "Montant brut" ]
+                div [ txt "Montant" ]
+              ; div [ txt "Salaire journalier de référence" ]
               ; div [ txt "Jours éligibles" ]
               ]
           ; div
               [
-                div
+                div [ txt @@ Format.asprintf "%a €" Num.pp result.amount ]
+              ; div
                   [
                     txt @@ Format.asprintf "%a €" Num.pp result.ref_daily_salary
                   ]
-              ; div [ txt @@ Format.asprintf "%a €" Num.pp result.applied_tva ]
-              ; div
-                  [
-                    txt @@ Format.asprintf "%a €" Num.pp result.secretariat_fee
-                  ]
-              ; div
-                  [ txt @@ Format.asprintf "%a €" Num.pp result.employer_cost ]
-              ; div [ txt @@ Format.asprintf "%a €" Num.pp result.gross ]
               ; div
                   [
                     txt
@@ -796,11 +774,9 @@ let render_entry_by_fee
       {
         case
       ; date_str
-      ; amount_gross_gross_str
-      ; tva_included
+      ; amount_str
       ; has_contract
       ; has_c4
-      ; social_secretary
       ; daily_salary_ref_str
       ; _
       } as k) =
@@ -840,7 +816,7 @@ let render_entry_by_fee
                               [
                                 name "case_amount"
                               ; id "case_amount"
-                              ; value amount_gross_gross_str
+                              ; value amount_str
                               ; placeholder "Montant du cachet"
                               ; oninput (fun x -> Message.Fill_fee_amount x)
                               ]
@@ -865,29 +841,6 @@ let render_entry_by_fee
                             ~a:[ class_ "joint-doc" ]
                             [
                               div
-                                [
-                                  optional_from_map
-                                    ~a:
-                                      [
-                                        oninput (fun x ->
-                                            Message.Fill_secretary x)
-                                      ]
-                                    social_secretary Config.social_secretary
-                                ; label [ txt "Secrétariat social" ]
-                                ]
-                            ; div
-                                [
-                                  checkbox
-                                    ~a:
-                                      [
-                                        onchange_checked (fun value ->
-                                            Message.Check_tva value)
-                                      ]
-                                    tva_included ()
-                                ; label
-                                    [ txt "TVA appliquée au montant du cachet" ]
-                                ]
-                            ; div
                                 [
                                   checkbox
                                     ~a:

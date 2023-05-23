@@ -113,8 +113,7 @@ module Entry = struct
         ; has_c4 : bool
         ; quarter : int
         ; days : Num.t
-        ; gross : Num.t
-        ; gross_gross : Num.t
+        ; amount : Num.t
         ; date : Date.t
         ; ref_daily_salary : Num.t
       }
@@ -124,7 +123,7 @@ module Entry = struct
     Duration
       { id; has_contract; has_c4; is_artistic; date; quarter; days; raw_days }
 
-  let fee ~id ~has_contract ~has_c4 ~quarter ~days ~gross ~gross_gross ~date
+  let fee ~id ~has_contract ~has_c4 ~quarter ~days ~amount ~date
       ~ref_daily_salary =
     Fee
       {
@@ -133,8 +132,7 @@ module Entry = struct
       ; has_c4
       ; quarter
       ; days
-      ; gross
-      ; gross_gross
+      ; amount
       ; date
       ; ref_daily_salary
       }
@@ -187,8 +185,7 @@ module Entry = struct
         ; has_c4
         ; quarter
         ; days
-        ; gross
-        ; gross_gross
+        ; amount
         ; date
         ; ref_daily_salary
         } ->
@@ -202,8 +199,7 @@ module Entry = struct
                 ; ("has_c4", `Bool has_c4)
                 ; ("quarter", `Int quarter)
                 ; ("days", `Float (Num.to_float days))
-                ; ("gross", `Float (Num.to_float gross))
-                ; ("gross_gross", `Float (Num.to_float gross_gross))
+                ; ("amount", `Float (Num.to_float amount))
                 ; ("date", `String (Date.to_string date))
                 ; ("ref_daily_salary", `Float (Num.to_float ref_daily_salary))
                 ]) )
@@ -220,14 +216,10 @@ module Entry = struct
         let* date = List.assoc_opt "date" assoc >>= to_string_option in
         let* date = Date.from_string date |> Result.to_option in
         let* quarter = List.assoc_opt "quarter" assoc >>= to_int_option in
-        let* gross =
-          List.assoc_opt "gross" assoc >>= to_float_option >|= Num.from_float
+        let* amount =
+          List.assoc_opt "amount" assoc >>= to_float_option >|= Num.from_float
         in
-        let* gross_gross =
-          List.assoc_opt "gross_gross" assoc
-          >>= to_float_option
-          >|= Num.from_float
-        in
+
         let* ref_daily_salary =
           List.assoc_opt "ref_daily_salary" assoc
           >>= to_float_option
@@ -243,8 +235,7 @@ module Entry = struct
           ; has_contract
           ; date
           ; quarter
-          ; gross
-          ; gross_gross
+          ; amount
           ; days
           ; ref_daily_salary
           }
