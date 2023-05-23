@@ -126,10 +126,7 @@ let compute_nod_result = function
         [
           div [ div [ txt "Brut" ]; div @@ eur r_nod_brut; div [] ]
         ; div [ div [ txt "TVA" ]; div @@ eur r_nod_tva; div [] ]
-        ; div
-            [
-              div [ txt "Secrétariat social" ]; div @@ eur r_nod_social; div []
-            ]
+        ; div [ div [ txt "Bureau social" ]; div @@ eur r_nod_social; div [] ]
         ; div
             [ div [ txt "Charges patronales" ]; div @@ eur r_nod_cost; div [] ]
         ; div [ div [ txt "Cachet" ]; div @@ eur r_nod_cachet; div [] ]
@@ -150,12 +147,7 @@ let compute_gross_result = function
             ]
         ; div [ div [ txt "Montant brut" ]; div @@ eur r_gross_cost; div [] ]
         ; div [ div [ txt "TVA" ]; div @@ eur r_gross_tva; div [] ]
-        ; div
-            [
-              div [ txt "Secrétariat social" ]
-            ; div @@ eur r_gross_social
-            ; div []
-            ]
+        ; div [ div [ txt "Bureau social" ]; div @@ eur r_gross_social; div [] ]
         ; div [ div [ txt "Charges patronales" ]; div @@ eur r_gross; div [] ]
         ]
 
@@ -226,10 +218,7 @@ let gross_simulation
              ]
          ; div
              [
-               div
-                 [
-                   label ~a:[ for_ "gross-social" ] [ txt "Secrétariat social" ]
-                 ]
+               div [ label ~a:[ for_ "gross-social" ] [ txt "Bureau social" ] ]
              ; div
                  [
                    optional_from_map
@@ -249,7 +238,7 @@ let gross_simulation
                  [
                    label
                      ~a:[ for_ "gross-percent" ]
-                     [ txt "Pourcentage perçu par le secrétariat" ]
+                     [ txt "Pourcentage perçu par le bureau social" ]
                  ]
              ; div
                  [
@@ -341,8 +330,7 @@ let nod_simulation
              ]
          ; div
              [
-               div
-                 [ label ~a:[ for_ "nod-social" ] [ txt "Secrétariat social" ] ]
+               div [ label ~a:[ for_ "nod-social" ] [ txt "Bureau social" ] ]
              ; div
                  [
                    optional_from_map
@@ -362,7 +350,7 @@ let nod_simulation
                  [
                    label
                      ~a:[ for_ "nod-percent" ]
-                     [ txt "Pourcentage perçu par le secrétariat" ]
+                     [ txt "Pourcentage perçu par le bureau social" ]
                  ]
              ; div
                  [
