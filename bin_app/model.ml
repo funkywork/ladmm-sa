@@ -286,7 +286,9 @@ let compute_fee_result ?(update_ref_salary = false) k =
     let* qi = Quarters.get_by_date k.case.quarters date in
     let* ref_daily_salary = ref_s in
     let* amount =
-      match float_of_string_opt k.amount_str with
+      match
+        float_of_string_opt (k.amount_str |> Util.replace_char ~from:',' ~by:'.')
+      with
       | None -> Error (`Invalid_amount k.amount_str)
       | Some x ->
           if x < 0.0 then Error (`Invalid_amount k.amount_str)

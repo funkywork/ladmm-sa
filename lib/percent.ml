@@ -32,7 +32,12 @@ let pp' ppf x =
   Format.fprintf ppf "%a" Num.pp r
 
 let pp ppf x = Format.fprintf ppf "%a%c" pp' x '%'
-let to_string x = Format.asprintf "%a" pp x
-let to_string' x = Format.asprintf "%a" pp' x
+
+let to_string x =
+  Format.asprintf "%a" pp x |> Util.replace_char ~from:',' ~by:'.'
+
+let to_string' x =
+  Format.asprintf "%a" pp' x |> Util.replace_char ~from:',' ~by:'.'
+
 let apply percent value = Num.mul value percent
 let ( ~%: ) x = from_float x

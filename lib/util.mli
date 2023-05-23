@@ -44,3 +44,4 @@ end
 
 val modulo : int -> int -> int
 val slugify : ?space:string -> string -> string
+val replace_char : from:char -> by:char -> string -> string

@@ -34,7 +34,11 @@ let htd_compute_result = function
             [
               span
                 ~a:[ class_ "verbatim" ]
-                [ txt @@ Format.asprintf "%a" Num.pp x ]
+                [
+                  txt
+                  @@ (Format.asprintf "%a" Num.pp x
+                     |> Util.replace_char ~from:'.' ~by:',')
+                ]
             ; span [ txt "jours calculés" ]
             ]
         ]
@@ -107,14 +111,26 @@ let htd_simulation Model.{ htd_hours; htd_avg; htd_result } =
 let eur x =
   Html.
     [
-      span ~a:[ class_ "verbatim" ] [ txt @@ Format.asprintf "%a" Num.pp x ]
+      span
+        ~a:[ class_ "verbatim" ]
+        [
+          txt
+          @@ (Format.asprintf "%a" Num.pp x
+             |> Util.replace_char ~from:'.' ~by:',')
+        ]
     ; span [ txt "euros" ]
     ]
 
 let days x =
   Html.
     [
-      span ~a:[ class_ "verbatim" ] [ txt @@ Format.asprintf "%a" Num.pp x ]
+      span
+        ~a:[ class_ "verbatim" ]
+        [
+          txt
+          @@ (Format.asprintf "%a" Num.pp x
+             |> Util.replace_char ~from:'.' ~by:',')
+        ]
     ; span [ txt "jours" ]
     ]
 

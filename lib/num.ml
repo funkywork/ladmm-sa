@@ -27,6 +27,7 @@ let ( ~!: ) x = from_float x
 
 let from_string x =
   x
+  |> Util.replace_char ~from:',' ~by:'.'
   |> float_of_string_opt
   |> Option.fold
        ~none:(Error (`Num_invalid_string x))
@@ -42,7 +43,10 @@ let mul = Float.mul
 let div = Float.div
 let rem = Float.rem
 let pp ppf x = Format.fprintf ppf "%.2f" (to_float x)
-let to_string x = Format.asprintf "%a" pp x
+
+let to_string x =
+  Format.asprintf "%a" pp x |> Util.replace_char ~from:'.' ~by:','
+
 let equal = Float.equal
 let compare = Float.compare
 let ( = ) = equal

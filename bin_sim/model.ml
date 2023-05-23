@@ -83,7 +83,7 @@ let init () =
     hours_to_days =
       {
         htd_hours = make_empty_input ()
-      ; htd_avg = make_filled_input "7.6" (Some (Ok (Num.from_float 7.6)))
+      ; htd_avg = make_filled_input "7,6" (Some (Ok (Num.from_float 7.6)))
       ; htd_result = None
       }
   ; from_nod =
@@ -91,7 +91,7 @@ let init () =
         nod_days = make_empty_input ()
       ; nod_social = Some "Smart"
       ; nod_social_percent =
-          make_filled_input "6.5" (Some (Ok (Percent.from_float 6.5)))
+          make_filled_input "6,5" (Some (Ok (Percent.from_float 6.5)))
       ; nod_date_ref = None
       ; nod_salary_ref
       ; nod_result = None
@@ -101,7 +101,7 @@ let init () =
         gross_amount = make_empty_input ()
       ; gross_social = Some "Smart"
       ; gross_social_percent =
-          make_filled_input "6.5" (Some (Ok (Percent.from_float 6.5)))
+          make_filled_input "6,5" (Some (Ok (Percent.from_float 6.5)))
       ; gross_salary_ref = nod_salary_ref
       ; gross_tva = true
       ; gross_result = None
@@ -127,7 +127,12 @@ let validate_num str =
 let validate_percent str =
   let repr =
     let open Util.Result in
-    let* x = Float.of_string_opt str |> Option.to_result ~none:(`Invalid str) in
+    let* x =
+      str
+      |> Util.replace_char ~from:',' ~by:'.'
+      |> Float.of_string_opt
+      |> Option.to_result ~none:(`Invalid str)
+    in
     if x > 0.0 then Ok (Percent.from_float x) else Error (`Negative str)
   in
   let repr =

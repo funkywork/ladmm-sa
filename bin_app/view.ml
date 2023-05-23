@@ -236,8 +236,8 @@ let render_entry offset i =
                 has_c4 ()
             ]
         ; div [ txt @@ Format.asprintf "%a" Date.pp date ]
-        ; div [ txt @@ Format.asprintf "%a" Num.pp amount ]
-        ; div [ txt @@ Format.asprintf "%a" Num.pp ref_daily_salary ]
+        ; div [ txt @@ Num.to_string amount ]
+        ; div [ txt @@ Num.to_string ref_daily_salary ]
         ; div []
         ; div
             [
@@ -285,7 +285,6 @@ let render_entry offset i =
                 has_c4 ()
             ]
         ; div [ txt @@ Format.asprintf "%a" Date.pp s ]
-        ; div []
         ; div []
         ; div []
         ; div
@@ -571,7 +570,7 @@ let render_range_label case days_5dw sd is_non_artistic =
               ]
             else
               [
-                span [ txt @@ Format.asprintf "%a" Num.pp days_6dw ]
+                span [ txt @@ Num.to_string days_6dw ]
               ; span [ txt (" jour" ^ suff ^ " éligible" ^ suff) ]
               ]
       in

@@ -54,3 +54,10 @@ let slugify ?(space = "_") =
       else if code = 32 || code = 45 then acc ^ space
       else acc)
     ""
+
+let replace_char ~from ~by source =
+  String.fold_left
+    (fun acc c ->
+      let c = if Char.equal c from then by else c in
+      acc ^ String.make 1 c)
+    "" source
