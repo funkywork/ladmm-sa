@@ -48,7 +48,29 @@ type from_nod = {
   ; nod_result : from_nod_result option
 }
 
-type t = { hours_to_days : hours_to_days; from_nod : from_nod; nop : unit }
+type from_gross_result = {
+    r_gross_days : Num.t
+  ; r_gross : Num.t
+  ; r_gross_tva : Num.t
+  ; r_gross_social : Num.t
+  ; r_gross_cost : Num.t
+}
+
+type from_gross_gross = {
+    gross_amount : Num.t inputable
+  ; gross_social : string option
+  ; gross_social_percent : Percent.t inputable
+  ; gross_salary_ref : Num.t inputable
+  ; gross_tva : bool
+  ; gross_result : from_gross_result option
+}
+
+type t = {
+    hours_to_days : hours_to_days
+  ; from_nod : from_nod
+  ; from_gross_gross : from_gross_gross
+  ; nop : unit
+}
 
 let init () =
   let salary = Temporal_db.find_last Config.daily_reference_salary in
@@ -67,12 +89,22 @@ let init () =
   ; from_nod =
       {
         nod_days = make_empty_input ()
-      ; nod_social = Some "SMART"
+      ; nod_social = Some "Smart"
       ; nod_social_percent =
           make_filled_input "6.5" (Some (Ok (Percent.from_float 6.5)))
       ; nod_date_ref = None
       ; nod_salary_ref
       ; nod_result = None
+      }
+  ; from_gross_gross =
+      {
+        gross_amount = make_empty_input ()
+      ; gross_social = Some "Smart"
+      ; gross_social_percent =
+          make_filled_input "6.5" (Some (Ok (Percent.from_float 6.5)))
+      ; gross_salary_ref = nod_salary_ref
+      ; gross_tva = true
+      ; gross_result = None
       }
   ; nop = ()
   }
@@ -134,6 +166,25 @@ let compute_nod ({ nod_days; nod_social_percent; nod_salary_ref; _ } as model) =
   in
   { model with nod_result }
 
+let compute_gross
+    ({ gross_amount; gross_social_percent; gross_salary_ref; gross_tva; _ } as
+    model) =
+  let gross_result =
+    let open Util.Option in
+    let* amount = gross_amount.repr >>= Result.to_option in
+    let tva = if gross_tva then Percent.from_int 6 else Percent.from_int 0 in
+    let* socp = gross_social_percent.repr >>= Result.to_option in
+    let+ salr = gross_salary_ref.repr >>= Result.to_option in
+    let r_gross_tva = Percent.(apply tva) amount in
+    let r_gross_social = Percent.apply socp Num.(amount - r_gross_tva) in
+    let cost = Num.(amount - r_gross_tva - r_gross_social) in
+    let r_gross_cost = Num.(cost - Percent.(apply (from_float 36.3) cost)) in
+    let r_gross = Num.(amount - r_gross_social - r_gross_tva - r_gross_cost) in
+    let r_gross_days = Num.(r_gross_cost / salr) in
+    { r_gross; r_gross_tva; r_gross_social; r_gross_cost; r_gross_days }
+  in
+  { model with gross_result }
+
 let update_htd hours_to_days = function
   | Message.Htd_fill_hours value ->
       compute_hours_to_days
@@ -183,11 +234,42 @@ let update_nod from_nod = function
         }
   | _ -> from_nod
 
-let update ({ hours_to_days; from_nod; _ } as model) message =
+let update_gross from_gross = function
+  | Message.Gross_fill_amount value ->
+      compute_gross { from_gross with gross_amount = validate_num value }
+  | Gross_change_social value ->
+      let gross_social, gross_social_percent =
+        Smap.find_opt value Config.social_secretary
+        |> Option.fold
+             ~none:
+               (None, make_filled_input "0.0" (Some (Ok (Percent.from_int 0))))
+             ~some:(fun x ->
+               ( Some value
+               , make_filled_input (Percent.to_string' x) (Some (Ok x)) ))
+      in
+      compute_gross { from_gross with gross_social; gross_social_percent }
+  | Gross_change_social_percent value ->
+      compute_gross
+        {
+          from_gross with
+          gross_social_percent = validate_percent value
+        ; gross_social = None
+        }
+  | Gross_change_salary_ref value ->
+      compute_gross { from_gross with gross_salary_ref = validate_num value }
+  | Gross_change_tva value ->
+      compute_gross { from_gross with gross_tva = value }
+  | _ -> from_gross
+
+let update ({ hours_to_days; from_nod; from_gross_gross; _ } as model) message =
   match message with
   | Message.Htd_fill_hours _ | Htd_fill_avg _ ->
       { model with hours_to_days = update_htd hours_to_days message }
   | Message.Nod_fill_days _ | Nod_change_social _ | Nod_change_social_percent _
   | Nod_change_date_ref _ | Nod_change_salary_ref _ ->
       { model with from_nod = update_nod from_nod message }
+  | Message.Gross_fill_amount _ | Gross_change_social _
+  | Gross_change_social_percent _ | Gross_change_tva _
+  | Gross_change_salary_ref _ ->
+      { model with from_gross_gross = update_gross from_gross_gross message }
   | _ -> model

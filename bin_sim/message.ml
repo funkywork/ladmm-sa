@@ -28,5 +28,11 @@ type t =
   | Nod_change_social_percent of string
   | Nod_change_date_ref of string
   | Nod_change_salary_ref of string
+  (* Gross simulator *)
+  | Gross_fill_amount of string
+  | Gross_change_social of string
+  | Gross_change_social_percent of string
+  | Gross_change_salary_ref of string
+  | Gross_change_tva of bool
   (* garbage*)
   | Nop

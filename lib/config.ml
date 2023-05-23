@@ -72,4 +72,11 @@ let known_annual_leave =
         ])
 
 let social_secretary =
-  [ ("SMART", Percent.from_float 6.50) ] |> List.to_seq |> Smap.of_seq
+  [
+    ("Smart", Percent.from_float 6.50)
+  ; ("Merveille", Percent.from_float 6.50)
+  ; ("Amplo", Percent.from_float 6.50)
+  ; ("Tentoo", Percent.from_float 6.50)
+  ]
+  |> List.to_seq
+  |> Smap.of_seq

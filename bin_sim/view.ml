@@ -111,6 +111,13 @@ let eur x =
     ; span [ txt "euros" ]
     ]
 
+let days x =
+  Html.
+    [
+      span ~a:[ class_ "verbatim" ] [ txt @@ Format.asprintf "%a" Num.pp x ]
+    ; span [ txt "jours" ]
+    ]
+
 let compute_nod_result = function
   | None -> []
   | Some Model.{ r_nod_brut; r_nod_tva; r_nod_social; r_nod_cost; r_nod_cachet }
@@ -127,6 +134,167 @@ let compute_nod_result = function
             [ div [ txt "Charges patronales" ]; div @@ eur r_nod_cost; div [] ]
         ; div [ div [ txt "Cachet" ]; div @@ eur r_nod_cachet; div [] ]
         ]
+
+let compute_gross_result = function
+  | None -> []
+  | Some
+      Model.{ r_gross_days; r_gross; r_gross_tva; r_gross_social; r_gross_cost }
+    ->
+      Html.
+        [
+          div
+            [
+              div [ txt "Nombre de jours éligibles" ]
+            ; div @@ days r_gross_days
+            ; div []
+            ]
+        ; div [ div [ txt "Montant brut" ]; div @@ eur r_gross_cost; div [] ]
+        ; div [ div [ txt "TVA" ]; div @@ eur r_gross_tva; div [] ]
+        ; div
+            [
+              div [ txt "Secrétariat social" ]
+            ; div @@ eur r_gross_social
+            ; div []
+            ]
+        ; div [ div [ txt "Charges patronales" ]; div @@ eur r_gross; div [] ]
+        ]
+
+let gross_simulation
+    Model.
+      {
+        gross_amount
+      ; gross_social
+      ; gross_social_percent
+      ; gross_salary_ref
+      ; gross_tva
+      ; gross_result
+      ; _
+      } =
+  let open Html in
+  fieldset_with
+    ~a:[ class_ "simulator" ]
+    "Calcul des données intermédiaires en fonction du montant brut-brut"
+    [
+      p
+        [
+          txt
+            "Ce simulateur permet d'approximativement le nombre de jours \
+             éligibles à partir d'un montant brut-brut (avec possibilité \
+             d'inclure, ou non, la TVA et l'implication d'un bureau social)"
+        ]
+    ; div
+        ~a:[ class_ "enum" ]
+        ([
+           div
+             [
+               div
+                 [
+                   label
+                     ~a:[ for_ "gross-amount" ]
+                     [ txt "Montant du brut-brut" ]
+                 ]
+             ; div
+                 [
+                   input
+                     ~a:
+                       [
+                         type_ "text"
+                       ; placeholder "Montant du brut brut"
+                       ; value gross_amount.str
+                       ; name "gross-amount"
+                       ; id "gross-amount"
+                       ; oninput (fun x -> Message.Gross_fill_amount x)
+                       ]
+                     []
+                 ]
+             ; div (compute_error gross_amount.repr)
+             ]
+         ; div
+             [
+               div [ label ~a:[ for_ "gross-tva" ] [ txt "TVA incluse ?" ] ]
+             ; div
+                 [
+                   checkbox
+                     ~a:
+                       [
+                         id "gross-tva"
+                       ; onchange_checked (fun x -> Message.Gross_change_tva x)
+                       ]
+                     gross_tva ()
+                 ]
+             ; div []
+             ]
+         ; div
+             [
+               div
+                 [
+                   label ~a:[ for_ "gross-social" ] [ txt "Secrétariat social" ]
+                 ]
+             ; div
+                 [
+                   optional_from_map
+                     ~a:
+                       [
+                         name "gross-social"
+                       ; id "gross-social"
+                       ; oninput (fun x -> Message.Gross_change_social x)
+                       ]
+                     gross_social Config.social_secretary
+                 ]
+             ; div []
+             ]
+         ; div
+             [
+               div
+                 [
+                   label
+                     ~a:[ for_ "gross-percent" ]
+                     [ txt "Pourcentage perçu par le secrétariat" ]
+                 ]
+             ; div
+                 [
+                   input
+                     ~a:
+                       [
+                         type_ "text"
+                       ; placeholder "6.5"
+                       ; value gross_social_percent.str
+                       ; name "gross-percent"
+                       ; id "gross-percent"
+                       ; oninput (fun x ->
+                             Message.Gross_change_social_percent x)
+                       ]
+                     []
+                 ]
+             ; div (compute_error gross_social_percent.repr)
+             ]
+         ; div
+             [
+               div
+                 [
+                   label
+                     ~a:[ for_ "gross-ref" ]
+                     [ txt "Salaire journalier de référence" ]
+                 ]
+             ; div
+                 [
+                   input
+                     ~a:
+                       [
+                         type_ "text"
+                       ; placeholder "Entrez le salaire journalier de référence"
+                       ; value gross_salary_ref.str
+                       ; name "nod-ref"
+                       ; id "nod-ref"
+                       ; oninput (fun x -> Message.Gross_change_salary_ref x)
+                       ]
+                     []
+                 ]
+             ; div (compute_error gross_salary_ref.repr)
+             ]
+         ]
+        @ compute_gross_result gross_result)
+    ]
 
 let nod_simulation
     Model.
@@ -240,8 +408,12 @@ let nod_simulation
         @ compute_nod_result nod_result)
     ]
 
-let from_model Model.{ hours_to_days; from_nod; _ } =
-  [ htd_simulation hours_to_days; nod_simulation from_nod ]
+let from_model Model.{ hours_to_days; from_nod; from_gross_gross; _ } =
+  [
+    htd_simulation hours_to_days
+  ; nod_simulation from_nod
+  ; gross_simulation from_gross_gross
+  ]
 
 let view model =
   let open Html in
