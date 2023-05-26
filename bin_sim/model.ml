@@ -163,7 +163,7 @@ let compute_nod ({ nod_days; nod_social_percent; nod_salary_ref; _ } as model) =
     let r_nod_tva = Percent.(apply @@ from_int 6) r_nod_brut in
     let r_nod_social = Percent.apply socp Num.(r_nod_brut - r_nod_tva) in
     let cost = Num.(r_nod_brut - r_nod_tva - r_nod_social) in
-    let r_nod_cost = Num.(cost - Percent.(apply (from_float 36.3) cost)) in
+    let r_nod_cost = Num.(cost - Percent.(apply (from_float 25.0) cost)) in
     let r_nod_cachet =
       Num.(r_nod_brut + r_nod_social + r_nod_tva + r_nod_cost)
     in
@@ -183,7 +183,7 @@ let compute_gross
     let r_gross_tva = Percent.(apply tva) amount in
     let r_gross_social = Percent.apply socp Num.(amount - r_gross_tva) in
     let cost = Num.(amount - r_gross_tva - r_gross_social) in
-    let r_gross_cost = Num.(cost - Percent.(apply (from_float 36.3) cost)) in
+    let r_gross_cost = Num.(cost - Percent.(apply (from_float 25.0) cost)) in
     let r_gross = Num.(amount - r_gross_social - r_gross_tva - r_gross_cost) in
     let r_gross_days = Num.(r_gross_cost / salr) in
     { r_gross; r_gross_tva; r_gross_social; r_gross_cost; r_gross_days }
